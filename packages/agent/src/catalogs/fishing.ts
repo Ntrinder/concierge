@@ -1,0 +1,77 @@
+import type { Product } from "../types";
+
+interface GearInput {
+  id: string; name: string; byline: string; price: number; glyph: "rod" | "reel" | "kit";
+  flyRod: boolean; beginner: boolean; packedCm: number; lineWeight?: number;
+  specs: [string, string][]; blurb: string; why: string;
+}
+
+const gear = (g: GearInput): Product => ({
+  id: g.id, store: "fishing", name: g.name, byline: g.byline, price: g.price,
+  blurb: g.blurb, why: g.why, image: { kind: "glyph", glyph: g.glyph },
+  attrs: {
+    flyRod: g.flyRod, beginner: g.beginner, packedCm: g.packedCm,
+    ...(g.lineWeight !== undefined ? { lineWeight: g.lineWeight } : {}),
+  },
+  specs: g.specs.map(([label, value]) => ({ label, value })),
+});
+
+export const FISHING: Product[] = [
+  gear({ id: "f-stillwater-trail", name: "Stillwater Trail 7'6\" 4wt", byline: "4-piece fly rod · medium action", price: 179, glyph: "rod",
+    flyRod: true, beginner: true, packedCm: 58, lineWeight: 4,
+    specs: [["Length", "7'6\""], ["Line", "4 wt"], ["Pieces", "4"], ["Packed", "58 cm"], ["Weight", "78 g"], ["Action", "Medium"]],
+    blurb: "A forgiving medium-action 4 wt that breaks into four and rides in a daypack side pocket. Lifetime warranty.",
+    why: "Ticks every box on the water — it just costs more." }),
+  gear({ id: "f-headwater", name: "Headwater 7'6\" 3wt", byline: "4-piece fly rod · medium-slow action", price: 189, glyph: "rod",
+    flyRod: true, beginner: true, packedCm: 56, lineWeight: 3,
+    specs: [["Length", "7'6\""], ["Line", "3 wt"], ["Pieces", "4"], ["Packed", "56 cm"], ["Weight", "72 g"], ["Action", "Med-slow"]],
+    blurb: "Delicate 3 wt for tiny brooks. Slow enough to feel every cast load.",
+    why: "The most delicate option — lovely on very small water." }),
+  gear({ id: "f-brookline", name: "Brookline 7' 4wt", byline: "3-piece fly rod · medium action", price: 129, glyph: "rod",
+    flyRod: true, beginner: true, packedCm: 85, lineWeight: 4,
+    specs: [["Length", "7'0\""], ["Line", "4 wt"], ["Pieces", "3"], ["Packed", "85 cm"], ["Weight", "80 g"], ["Action", "Medium"]],
+    blurb: "Short, light and easy to cast under trees. Three pieces, so it packs longer.",
+    why: "Right weight, right price — straps to the outside of a pack." }),
+  gear({ id: "f-pocketwater", name: "Pocketwater 6'6\" 3wt", byline: "3-piece fly rod · medium action", price: 139, glyph: "rod",
+    flyRod: true, beginner: true, packedCm: 88, lineWeight: 3,
+    specs: [["Length", "6'6\""], ["Line", "3 wt"], ["Pieces", "3"], ["Packed", "88 cm"], ["Weight", "70 g"], ["Action", "Medium"]],
+    blurb: "A short rod built for overgrown streams where a longer rod can't swing.",
+    why: "Brilliant under trees; packs long." }),
+  gear({ id: "f-trailhead-kit", name: "Trailhead 8'6\" 5wt Kit", byline: "Rod, reel, line & case", price: 145, glyph: "kit",
+    flyRod: true, beginner: true, packedCm: 55, lineWeight: 5,
+    specs: [["Length", "8'6\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "55 cm"], ["Weight", "96 g"], ["Includes", "Reel + line"]],
+    blurb: "Everything you need in one case: rod, reel, backing and floating line.",
+    why: "Complete and packable, but a 5 wt is more than tight streams need." }),
+  gear({ id: "f-upstream-pro", name: "Upstream Pro 7'9\" 4wt", byline: "4-piece fly rod · fast action", price: 349, glyph: "rod",
+    flyRod: true, beginner: false, packedCm: 62, lineWeight: 4,
+    specs: [["Length", "7'9\""], ["Line", "4 wt"], ["Pieces", "4"], ["Packed", "62 cm"], ["Weight", "68 g"], ["Action", "Fast"]],
+    blurb: "A precise, fast rod for experienced casters.", why: "Superb — for when you've got a few seasons in." }),
+  gear({ id: "f-backcountry-six", name: "Backcountry 7' 3wt Six", byline: "6-piece fly rod · fast action", price: 289, glyph: "rod",
+    flyRod: true, beginner: false, packedCm: 42, lineWeight: 3,
+    specs: [["Length", "7'0\""], ["Line", "3 wt"], ["Pieces", "6"], ["Packed", "42 cm"], ["Weight", "66 g"], ["Action", "Fast"]],
+    blurb: "Six pieces, fits inside a 30 L pack.", why: "Ultra-packable, but stiff for a first rod." }),
+  gear({ id: "f-rivermouth", name: "Rivermouth 9' 6wt", byline: "4-piece fly rod · all-rounder", price: 119, glyph: "rod",
+    flyRod: true, beginner: true, packedCm: 72, lineWeight: 6,
+    specs: [["Length", "9'0\""], ["Line", "6 wt"], ["Pieces", "4"], ["Packed", "72 cm"], ["Weight", "104 g"], ["Action", "Medium"]],
+    blurb: "A do-everything rod for bigger rivers and wind.", why: "Great value, built for bigger water." }),
+  gear({ id: "f-meadow", name: "Meadow 8'6\" 5wt", byline: "4-piece fly rod · medium action", price: 99, glyph: "rod",
+    flyRod: true, beginner: true, packedCm: 69, lineWeight: 5,
+    specs: [["Length", "8'6\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "69 cm"], ["Weight", "92 g"], ["Action", "Medium"]],
+    blurb: "A friendly first rod for lakes and medium rivers.", why: "Cheap and cheerful." }),
+  gear({ id: "f-tarn-kit", name: "Tarn 9' 5wt Starter Kit", byline: "Rod, reel, line & tube", price: 165, glyph: "kit",
+    flyRod: true, beginner: true, packedCm: 72, lineWeight: 5,
+    specs: [["Length", "9'0\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "72 cm"], ["Weight", "101 g"], ["Includes", "Reel + line"]],
+    blurb: "A complete lake-and-river kit.", why: "Everything included, for bigger water." }),
+  gear({ id: "f-glacier", name: "Glacier 9' 8wt", byline: "2-piece fly rod · saltwater", price: 199, glyph: "rod",
+    flyRod: true, beginner: false, packedCm: 138, lineWeight: 8,
+    specs: [["Length", "9'0\""], ["Line", "8 wt"], ["Pieces", "2"], ["Packed", "138 cm"], ["Weight", "128 g"], ["Action", "Fast"]],
+    blurb: "Saltwater and big fish.", why: "Wrong tool for streams." }),
+  gear({ id: "f-scout-spin", name: "Scout Telescopic Spinning Rod", byline: "Spinning rod · telescopic", price: 49, glyph: "rod",
+    flyRod: false, beginner: true, packedCm: 46,
+    specs: [["Length", "6'0\""], ["Type", "Spinning"], ["Packed", "46 cm"], ["Weight", "140 g"]],
+    blurb: "Collapses to 46 cm. Not a fly rod.", why: "Packable spinning rod." }),
+  gear({ id: "f-clearwater-reel", name: "Clearwater 3/4 Fly Reel", byline: "Fly reel · large arbor", price: 69, glyph: "reel",
+    flyRod: false, beginner: true, packedCm: 9, lineWeight: 4,
+    specs: [["Line", "3–4 wt"], ["Arbor", "Large"], ["Weight", "112 g"], ["Drag", "Click & pawl"]],
+    blurb: "Simple, light reel to pair with a 3–4 wt rod.", why: "A perfect partner for a small-stream rod." }),
+];
