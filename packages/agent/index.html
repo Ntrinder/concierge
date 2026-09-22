@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Concierge harness</title>
+    <style>
+      body { margin: 0; font-family: Georgia, serif; background: #ddd; }
+      .grid { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; }
+      .cell { width: 440px; height: 720px; background: #fff; border: 1px solid #bbb; }
+      .cell.narrow { width: 375px; }
+    </style>
+  </head>
+  <body>
+    <div class="grid" id="grid"></div>
+    <script type="module" src="/src/harness.ts"></script>
+  </body>
+</html>
