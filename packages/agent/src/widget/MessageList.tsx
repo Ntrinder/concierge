@@ -17,7 +17,7 @@ interface Props {
 
 function Words({ text, animate }: { text: string; animate: boolean }) {
   if (!animate) return <>{text}</>;
-  return <>{text.split(/(\s+)/).map((w, i) => (/\s+/.test(w) ? w : <span class="word" style={{ animationDelay: `${i * 14}ms` }}>{w}</span>))}</>;
+  return <>{text.split(/(\s+)/).map((w, i) => (/\s+/.test(w) ? w : <span key={i} class="word" style={{ animationDelay: `${i * 14}ms` }}>{w}</span>))}</>;
 }
 
 export function MessageList({ config, messages, visible, typing, compact, animateFrom, onOpen, onChoose, onNotify }: Props) {

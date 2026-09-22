@@ -29,6 +29,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
   const [initialCount] = useState(conv.messages.length);
   const [visible, setVisible] = useState(conv.messages.length);
   const [detail, setDetail] = useState<string | null>(null);
+  const [strip, setStrip] = useState(() => ({ constraints: conv.constraints, turn: conv.turn }));
   const compact = useCompact(host, inline);
   const typing = visible < conv.messages.length && conv.messages[visible]?.role === "agent";
 
@@ -41,6 +42,13 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
     const t = setTimeout(() => setVisible((v) => v + 1), delay);
     return () => clearTimeout(t);
   }, [visible, conv.messages.length]);
+
+  // Only update the constraint strip once the reveal queue has caught up, so
+  // dropped/new chips appear after the agent's lines, not before them.
+  useEffect(() => {
+    if (visible < conv.messages.length) return;
+    setStrip((s) => (s.constraints === conv.constraints && s.turn === conv.turn ? s : { constraints: conv.constraints, turn: conv.turn }));
+  }, [visible, conv]);
 
   // Lock host page scroll while the full-screen sheet is open on a phone
   useEffect(() => {
@@ -69,7 +77,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
           <div class="panel" role="dialog" aria-label={config.agent.name}>
             <Header config={config} onClose={() => setOpen(false)} />
             <div class="body">
-              <ConstraintStrip constraints={conv.constraints} turn={conv.turn} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
+              <ConstraintStrip constraints={strip.constraints} turn={strip.turn} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
               <MessageList
                 config={config}
                 messages={conv.messages}

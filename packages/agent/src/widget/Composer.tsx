@@ -15,8 +15,8 @@ export function Composer({ replies, busy, placeholder, onSend }: { replies: Repl
     <div class="composer-wrap">
       {!busy && replies.length > 0 && (
         <div class="replies" role="group" aria-label="Suggested replies">
-          {replies.map((r) => (
-            <button type="button" key={r.text} class="reply t-link" title={r.text} onClick={() => onSend(r.text)}>{r.label}</button>
+          {replies.map((r, i) => (
+            <button type="button" key={`${i}-${r.text}`} class="reply t-link" title={r.text} onClick={() => onSend(r.text)}>{r.label}</button>
           ))}
         </div>
       )}
