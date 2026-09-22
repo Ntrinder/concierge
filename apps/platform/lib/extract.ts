@@ -21,10 +21,74 @@ const ROOTISH = /(^|[\s,])(body|html|:root)\b/;
 const GENERIC_FONTS = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-sans-serif", "ui-serif", "ui-monospace", "-apple-system", "blinkmacsystemfont", "segoe ui", "roboto", "helvetica", "helvetica neue", "arial", "inherit", "initial", "georgia", "times new roman"]);
 const UA = "Mozilla/5.0 (compatible; ConciergeBrandReader/1.0; +https://concierge.example)";
 
-async function fetchText(url: string, cap: number): Promise<string> {
-  const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html,text/css,*/*" }, signal: AbortSignal.timeout(6000), redirect: "follow" });
+// Hostname patterns for loopback/private/link-local ranges. String-based, not IP-literal-aware
+// (see DECISIONS.md "Weakest part" for what this does not cover).
+const PRIVATE = /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1\]?$)/;
+const MAX_REDIRECTS = 3;
+
+function devAllowedHosts(): Set<string> {
+  const raw = process.env.EXTRACT_ALLOW_HOSTS ?? "localhost:3000,127.0.0.1:3000";
+  return new Set(raw.split(",").map((h) => h.trim()).filter(Boolean));
+}
+
+/**
+ * Single source of truth for the SSRF guard: blocks non-http(s) protocols and
+ * private/loopback/link-local hosts. In non-production, hosts explicitly listed in
+ * EXTRACT_ALLOW_HOSTS (default localhost:3000,127.0.0.1:3000) are allowed so the demo
+ * stores work in dev — this allowlist is never consulted in production, and it is never
+ * derived from a client-supplied header.
+ */
+export function assertPublicUrl(url: URL): void {
+  if (!/^https?:$/.test(url.protocol)) throw new Error("Blocked protocol");
+  if (!PRIVATE.test(url.hostname)) return;
+  if (process.env.NODE_ENV !== "production" && devAllowedHosts().has(url.host)) return;
+  throw new Error("Blocked private/loopback host");
+}
+
+async function fetchOnce(url: URL, cap: number): Promise<{ text: string; redirectedTo?: URL }> {
+  const res = await fetch(url.href, {
+    headers: { "user-agent": UA, accept: "text/html,text/css,*/*" },
+    signal: AbortSignal.timeout(6000),
+    redirect: "manual",
+  });
+  if (res.status >= 300 && res.status < 400) {
+    const loc = res.headers.get("location");
+    if (!loc) throw new Error("Redirect with no Location header");
+    return { text: "", redirectedTo: new URL(loc, url) };
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return (await res.text()).slice(0, cap);
+  if (!res.body) return { text: (await res.text()).slice(0, cap) };
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      chunks.push(value);
+      total += value.byteLength;
+      if (total >= cap) {
+        reader.cancel().catch(() => {});
+        break;
+      }
+    }
+  }
+  const buf = Buffer.concat(chunks.map((c) => Buffer.from(c)));
+  return { text: buf.subarray(0, cap).toString("utf-8") };
+}
+
+async function fetchText(rawUrl: string, cap: number): Promise<string> {
+  let url = new URL(rawUrl);
+  assertPublicUrl(url);
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const { text, redirectedTo } = await fetchOnce(url, cap);
+    if (!redirectedTo) return text;
+    if (hop === MAX_REDIRECTS) throw new Error("Too many redirects");
+    assertPublicUrl(redirectedTo);
+    url = redirectedTo;
+  }
+  throw new Error("Too many redirects");
 }
 
 function toHex(value: string): string | null {
