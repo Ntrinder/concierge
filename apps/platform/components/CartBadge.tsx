@@ -1,18 +1,23 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function CartBadge({ className, toastClassName, label = "Basket" }: { className?: string; toastClassName?: string; label?: string }) {
   const [count, setCount] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const onAdd = (e: Event) => {
       const { name, qty } = (e as CustomEvent<{ name: string; qty: number }>).detail;
       setCount((c) => c + qty);
       setToast(`Added “${name}” to your basket`);
-      setTimeout(() => setToast(null), 3200);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 3200);
     };
     window.addEventListener("concierge:add-to-cart", onAdd);
-    return () => window.removeEventListener("concierge:add-to-cart", onAdd);
+    return () => {
+      window.removeEventListener("concierge:add-to-cart", onAdd);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
   }, []);
   return (
     <>
