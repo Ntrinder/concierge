@@ -1,0 +1,9 @@
+.main { padding: 32px clamp(16px, 4vw, 48px) 80px; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 24px; }
+.head h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -.01em; }
+.head p { margin: 0; color: var(--ink-2); max-width: 44em; }
+.controls { display: flex; gap: 20px; font-size: 14px; }
+.grid { display: flex; flex-wrap: wrap; gap: 28px; }
+.cell { margin: 0; }
+.frame { height: 720px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.cell figcaption { margin-top: 8px; font-size: 13px; color: var(--ink-2); max-width: 440px; }
