@@ -1,11 +1,14 @@
 import { useEffect, useState } from "preact/hooks";
-import { replay } from "../engine/engine";
+import { removeConstraint, replay, send, submitNotify } from "../engine/engine";
 import { varsToCss } from "../tokens";
 import type { AgentConfig } from "../types";
 import styles from "./styles.css?inline";
 import { cls } from "./cls";
+import { Composer } from "./Composer";
+import { ConstraintStrip } from "./ConstraintStrip";
 import { Avatar, Header } from "./Header";
 import { CloseIcon } from "./icons";
+import { MessageList } from "./MessageList";
 import { useCompact } from "./useCompact";
 
 export interface AppProps {
@@ -18,10 +21,26 @@ export interface AppProps {
   highlight: string | null;
 }
 
+const reducedMotion = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 export function App({ config, vars, inline, defaultOpen, autoplay, host, highlight }: AppProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const [conv] = useState(() => replay(config.store, config.voice, autoplay));
+  const [conv, setConv] = useState(() => replay(config.store, config.voice, autoplay));
+  const [initialCount] = useState(conv.messages.length);
+  const [visible, setVisible] = useState(conv.messages.length);
+  const [detail, setDetail] = useState<string | null>(null);
   const compact = useCompact(host, inline);
+  const typing = visible < conv.messages.length && conv.messages[visible]?.role === "agent";
+
+  // Reveal queued messages one by one
+  useEffect(() => {
+    if (visible >= conv.messages.length) return;
+    const next = conv.messages[visible]!;
+    if (next.role === "user" || reducedMotion()) { setVisible(visible + 1); return; }
+    const delay = next.kind === "text" ? 450 + Math.min(850, next.text.length * 8) : 500;
+    const t = setTimeout(() => setVisible((v) => v + 1), delay);
+    return () => clearTimeout(t);
+  }, [visible, conv.messages.length]);
 
   // Lock host page scroll while the full-screen sheet is open on a phone
   useEffect(() => {
@@ -30,6 +49,10 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
     document.documentElement.style.overflow = "hidden";
     return () => { document.documentElement.style.overflow = prev; };
   }, [open, compact, inline]);
+
+  const say = (text: string) => setConv((s) => send(s, text));
+  const busy = visible < conv.messages.length;
+  const placeholder = conv.messages.length === 0 ? "Tell me what you're looking for…" : "Reply or ask something else…";
 
   return (
     <>
@@ -45,7 +68,22 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
         {open && (
           <div class="panel" role="dialog" aria-label={config.agent.name}>
             <Header config={config} onClose={() => setOpen(false)} />
-            <div class="body">{/* Task 6 */}<p style="padding:16px">{conv.messages.length} messages</p></div>
+            <div class="body">
+              <ConstraintStrip constraints={conv.constraints} turn={conv.turn} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
+              <MessageList
+                config={config}
+                messages={conv.messages}
+                visible={visible}
+                typing={typing}
+                compact={compact}
+                animateFrom={initialCount}
+                onOpen={setDetail}
+                onChoose={setDetail}
+                onNotify={(id, email) => setConv((s) => submitNotify(s, id, email))}
+              />
+              <Composer replies={conv.replies} busy={busy} placeholder={placeholder} onSend={say} />
+              {/* Task 7: DetailSheet when `detail` is set; uses getProduct, markAdded */}
+            </div>
           </div>
         )}
       </div>
