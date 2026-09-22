@@ -1,0 +1,32 @@
+.store {
+  --brand: #7A2E2E;
+  --bg: #F6F1E7;
+  --ink: #2B2522;
+  --muted: #6E625A;
+  --line: #E2D8C8;
+  min-height: 100vh; background: var(--bg); color: var(--ink);
+  font-family: "EB Garamond", Georgia, serif; font-size: 19px; line-height: 1.55;
+}
+.header { display: flex; align-items: center; gap: 32px; padding: 20px clamp(16px, 5vw, 64px); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-family: "Fraunces", serif; font-size: 26px; font-style: italic; }
+.nav { display: flex; gap: 24px; flex: 1; }
+.nav a { color: var(--ink); text-decoration: none; }
+.nav a:hover { color: var(--brand); text-decoration: underline; text-underline-offset: 4px; }
+.cart { font-variant: small-caps; letter-spacing: .04em; }
+.hero { max-width: 760px; padding: 88px clamp(16px, 5vw, 64px) 72px; }
+.eyebrow { color: var(--brand); font-style: italic; margin: 0 0 12px; }
+.hero h1 { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(40px, 7vw, 72px); line-height: 1.02; margin: 0 0 20px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); font-size: 21px; max-width: 34em; }
+.button { display: inline-block; margin-top: 16px; padding: 12px 26px; border-radius: 999px; background: var(--brand); color: #fff; text-decoration: none; }
+.shelf { padding: 24px clamp(16px, 5vw, 64px) 96px; border-top: 1px solid var(--line); }
+.shelf h2 { font-family: "Fraunces", serif; font-weight: 500; font-size: 30px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 40px 28px; }
+.item h3 { font-family: "Fraunces", serif; font-weight: 500; font-size: 18px; line-height: 1.2; margin: 14px 0 2px; }
+.author { color: var(--muted); margin: 0; font-style: italic; }
+.price { margin: 6px 0 0; }
+.cover { aspect-ratio: 2 / 3; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; border-radius: 2px; box-shadow: 2px 3px 0 var(--line), 0 12px 24px -12px rgba(60, 40, 20, .35); }
+.coverTitle { font-family: "Fraunces", serif; font-size: 17px; line-height: 1.1; }
+.coverAuthor { font-size: 12px; opacity: .8; margin-top: 4px; }
+.footer { padding: 32px clamp(16px, 5vw, 64px) 120px; color: var(--muted); border-top: 1px solid var(--line); font-size: 15px; }
+.toast { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); z-index: 10; padding: 10px 20px; border-radius: 999px; background: var(--ink); color: var(--bg); }
+@media (max-width: 640px) { .nav { display: none; } .header { justify-content: space-between; } .hero { padding-top: 48px; } }
