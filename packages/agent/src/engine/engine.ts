@@ -1,0 +1,87 @@
+import { CATALOGS } from "../catalogs";
+import type { AgentDraft, Constraint, ConvState, Message, StoreKey, Voice, VoiceCopy } from "../types";
+import { SCRIPTS } from "./index";
+import { present, type Ctx, type TurnOutput } from "./present";
+
+export function initialState(store: StoreKey, voice: Voice): ConvState {
+  return { store, voice, step: "start", turn: 0, seq: 0, constraints: [], messages: [], replies: SCRIPTS[store].greetingReplies, lastShown: [] };
+}
+
+type NewMessage = { role: "user"; kind: "text"; text: string } | ({ role: "agent" } & AgentDraft);
+
+function push(s: ConvState, m: NewMessage): ConvState {
+  const seq = s.seq + 1;
+  return { ...s, seq, messages: [...s.messages, { ...m, id: `m${seq}` } as Message] };
+}
+
+function stamp(prev: Constraint[], next: Constraint[], turn: number): Constraint[] {
+  return next.map((c) => {
+    const p = prev.find((x) => x.key === c.key);
+    const changed = !p || p.status !== c.status || p.value !== c.value;
+    return changed ? { ...c, changedAt: turn } : { ...c, changedAt: p.changedAt };
+  });
+}
+
+function ctxFor(s: ConvState, text: string): Ctx {
+  return { state: s, products: CATALOGS[s.store], text, v: (c: VoiceCopy) => c[s.voice] };
+}
+
+function apply(s: ConvState, out: TurnOutput, step: string): ConvState {
+  const turn = s.turn + 1;
+  let next: ConvState = {
+    ...s,
+    turn,
+    step: out.step ?? step,
+    replies: out.replies,
+    lastShown: out.lastShown ?? s.lastShown,
+    constraints: out.constraints ? stamp(s.constraints, out.constraints, turn) : s.constraints,
+  };
+  for (const d of out.messages) next = push(next, { role: "agent", ...d });
+  return next;
+}
+
+export function send(state: ConvState, text: string): ConvState {
+  const script = SCRIPTS[state.store];
+  const s = push(state, { role: "user", kind: "text", text });
+  const key = script.route(text, s);
+  const run = script.steps[key] ?? script.steps.fallback;
+  return apply(s, run(ctxFor(s, text)), key);
+}
+
+export function removeConstraint(state: ConvState, key: string): ConvState {
+  const target = state.constraints.find((x) => x.key === key && x.status === "active");
+  if (!target || target.hard) return state;
+  const constraints = state.constraints.map((x) => (x.key === key ? { ...x, status: "dropped" as const } : x));
+  const ctx = ctxFor(state, "");
+  const out = present(ctx, constraints, {
+    match: { warm: `Without “${target.label}”, here's what opens up:`, neutral: `Without “${target.label}”:`, terse: `Dropped “${target.label}”:` },
+    none: { warm: `Without “${target.label}”, these come closest:`, neutral: "Closest options:", terse: "Closest:" },
+  });
+  return apply(state, { constraints, messages: out.messages, lastShown: out.lastShown, replies: state.replies }, state.step);
+}
+
+export function markAdded(state: ConvState, productId: string): ConvState {
+  const v = (c: VoiceCopy) => c[state.voice];
+  return apply(state, {
+    messages: [
+      { kind: "added", productId },
+      { kind: "text", text: v({ warm: "Wonderful choice — it's in your basket. Anything else I can help you find?", neutral: "Added to your basket. Anything else?", terse: "In basket." }) },
+    ],
+    replies: [],
+  }, state.step);
+}
+
+export function submitNotify(state: ConvState, messageId: string, email: string): ConvState {
+  const messages = state.messages.map((m) => (m.id === messageId && m.kind === "notify-form" ? { ...m, done: email } : m));
+  const v = (c: VoiceCopy) => c[state.voice];
+  return apply({ ...state, messages }, {
+    messages: [{ kind: "text", text: v({ warm: `Done — I'll email ${email} as soon as a match lands.`, neutral: `We'll email ${email} when a match arrives.`, terse: `Will notify ${email}.` }) }],
+    replies: state.replies,
+  }, state.step);
+}
+
+export function replay(store: StoreKey, voice: Voice, count: number): ConvState {
+  let s = initialState(store, voice);
+  for (const input of SCRIPTS[store].demoInputs.slice(0, count)) s = send(s, input);
+  return s;
+}
