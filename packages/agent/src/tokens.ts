@@ -34,22 +34,46 @@ export function ensureContrast(fg: string, bg: string, min: number): string {
  * `backgrounds` at once. A chain of single-target `ensureContrast` calls can undo
  * itself (fixing contrast against one background can wreck it against another,
  * e.g. two close-but-not-identical backgrounds like --c-surface and a custom
- * --c-bg) — this steps in one direction and checks all targets together, so the
- * result is one colour that reads on both. Falls back to black/white.
+ * --c-bg) — this steps all candidates and checks all targets together, so the
+ * result is one colour that reads on all of them.
+ *
+ * Searches BOTH directions (darker and lighter), because on a mid-tone background
+ * there may be no single-direction step that helps: darkening can clear one
+ * background while lightening is what's needed for another. Among candidates that
+ * satisfy every background, returns the one with the smallest lightness change; if
+ * none do (some background combination is jointly unsatisfiable even at the
+ * black/white extremes), returns whichever candidate maximises the minimum
+ * contrast across all backgrounds, checking the pure black/white extremes too.
  */
 export function ensureContrastAll(fg: string, backgrounds: string[], min: number): string {
   const meetsAll = (c: string) => backgrounds.every((bg) => contrast(c, bg) >= min);
+  const minContrast = (c: string) => Math.min(...backgrounds.map((bg) => contrast(c, bg)));
   const start = formatHex(parse(fg)!);
   if (meetsAll(start)) return start;
   const base = lch(fg);
-  // Pick the step direction using whichever background is hardest to read against right now.
-  const hardest = backgrounds.reduce((worst, bg) => (contrast(start, bg) < contrast(start, worst) ? bg : worst));
-  const darker = contrast("#000000", hardest) >= contrast("#ffffff", hardest);
-  for (let step = 1; step <= 100; step++) {
-    const candidate = hex({ ...base, l: base.l + (darker ? -step : step) * 0.01 });
-    if (meetsAll(candidate)) return candidate;
+
+  let bestPassing: { delta: number; candidate: string } | null = null;
+  let bestOverall = { candidate: start, score: minContrast(start) };
+
+  for (const dir of [-1, 1] as const) {
+    for (let step = 1; step <= 100; step++) {
+      const candidate = hex({ ...base, l: base.l + dir * step * 0.01 });
+      const score = minContrast(candidate);
+      if (score > bestOverall.score) bestOverall = { candidate, score };
+      if (meetsAll(candidate)) {
+        const delta = step * 0.01;
+        if (!bestPassing || delta < bestPassing.delta) bestPassing = { delta, candidate };
+        break; // further steps in this direction only move further away; this is the closest hit here
+      }
+    }
   }
-  return darker ? "#000000" : "#ffffff";
+  if (bestPassing) return bestPassing.candidate;
+
+  for (const extreme of ["#000000", "#ffffff"]) {
+    const score = minContrast(extreme);
+    if (score > bestOverall.score) bestOverall = { candidate: extreme, score };
+  }
+  return bestOverall.candidate;
 }
 
 /** Best readable text colour on a fill: white, else near-black, else pure black. */
@@ -87,7 +111,25 @@ export function deriveTokens(config: AgentConfig): TokenResult {
   /** step away from the background toward the text colour */
   const toward = (d: number) => hex({ ...bg, l: bg.l + (isDark ? d : -d) });
 
-  const surface = toward(0.035);
+  // `toward()` shifts --c-surface away from --c-bg toward the text pole. On an
+  // ordinary derived background this offset is harmless. But on an awkward custom
+  // mid-tone --c-bg, --c-surface can end up in a spot where NO text lightness
+  // clears AA against both bg and surface at once (moving darker helps against one,
+  // lighter helps against the other). Guarantee solvability by shrinking the offset
+  // until a single colour (checked at the black/white extremes) can read on both;
+  // ordinary light/dark cases hit min-contrast on the first try and never shrink.
+  let surfaceOffset = 0.035;
+  let surface = toward(surfaceOffset);
+  const jointlySatisfiable = (bgA: string, bgB: string, min: number) =>
+    (contrast("#000000", bgA) >= min && contrast("#000000", bgB) >= min) ||
+    (contrast("#ffffff", bgA) >= min && contrast("#ffffff", bgB) >= min);
+  let shrinkGuard = 0;
+  while (!jointlySatisfiable(bgHex, surface, 4.5) && surfaceOffset > 0.001 && shrinkGuard < 30) {
+    surfaceOffset *= 0.6;
+    surface = toward(surfaceOffset);
+    shrinkGuard++;
+  }
+
   const border = toward(0.12);
   // Target 7:1 (AAA) against both --c-surface and --c-bg for extra headroom; this is
   // best-effort — on an awkward mid-tone custom background 7:1 may be unreachable, in

@@ -51,6 +51,32 @@ describe("deriveTokens", () => {
     }
   }
 
+  // Mid-grey backgrounds are the awkward case: --c-surface sits between --c-bg and the
+  // text pole, and for some greys no single text lightness clears AA against both at
+  // once unless the surface offset shrinks to make room. Sweep the whole mid-grey band.
+  const GREY_SWEEP: string[] = [];
+  for (let v = 0x5a; v <= 0x95; v += 0x04) {
+    const h = v.toString(16).padStart(2, "0");
+    GREY_SWEEP.push(`#${h}${h}${h}`);
+  }
+  for (const explicit of ["#777777", "#6f6f6f"]) {
+    if (!GREY_SWEEP.includes(explicit)) GREY_SWEEP.push(explicit);
+  }
+  const GREY_SWEEP_BRANDS = ["#7A2E2E", "#1E40FF"];
+  for (const background of GREY_SWEEP) {
+    for (const brand of GREY_SWEEP_BRANDS) {
+      for (const surface of ["light", "dark"] as const) {
+        it(`keeps AA contrast for brand ${brand} on grey background ${background} (${surface})`, () => {
+          const { vars } = deriveTokens({ ...base, brand, background, surface });
+          for (const [fg, bg] of TEXT_PAIRS) {
+            expect(contrast(vars[fg], vars[bg]), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          }
+          expect(contrast(vars["--c-brand-edge"], vars["--c-bg"])).toBeGreaterThanOrEqual(3);
+        });
+      }
+    }
+  }
+
   it("respects a custom background", () => {
     const { vars } = deriveTokens({ ...base, background: "#F6F1E7" });
     expect(vars["--c-bg"]).toBe("#f6f1e7");
