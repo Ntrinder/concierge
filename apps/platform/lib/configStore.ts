@@ -32,6 +32,9 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 
 export async function saveConfig(config: AgentConfig): Promise<string> {
   await fs.mkdir(DATA_DIR, { recursive: true });
+  // POC: no auth, so overwrite-by-id trusts whatever `config.id` the caller
+  // sends, and new ids use a 4-char random suffix (~1.7M combinations per
+  // slug) with no collision check. Both are accepted risks for the POC.
   let id = config.id;
   const existing = id && ID_RE.test(id) && !DEMO_IDS.has(id) ? await readConfig(id) : null;
   if (!existing) id = `${slug(config.agent.name)}-${Math.random().toString(36).slice(2, 6)}`;

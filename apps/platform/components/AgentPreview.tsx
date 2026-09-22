@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AgentConfig } from "@concierge/agent/core";
 
 let loading: Promise<void> | null = null;
@@ -22,15 +22,22 @@ type AgentEl = HTMLElement & { config?: AgentConfig };
 export function AgentPreview({ config, autoplay = 2, open = true, highlight, className }: {
   config: AgentConfig; autoplay?: number; open?: boolean; highlight?: string | null; className?: string;
 }) {
-  const ref = useRef<AgentEl>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => { loadAgentScript().then(() => setReady(true)); }, []);
-  useEffect(() => { if (ready && ref.current) ref.current.config = config; }, [ready, config]);
+
+  // Callback ref (not useRef + effect): applies `.config` whenever the node
+  // changes, or whenever `ready`/`config` change (which recreates this
+  // callback's identity, so React re-invokes it on the current node). That
+  // keeps the widget populated no matter how the host element remounts —
+  // ConciergeAgent itself observes the `open` attribute and remounts its
+  // internal App, so no React `key` is needed here to react to `open`.
+  const setNode = useCallback((node: HTMLElement | null) => {
+    if (ready && node) (node as AgentEl).config = config;
+  }, [ready, config]);
 
   return (
     <concierge-agent
-      key={open ? "open" : "closed"}
-      ref={ref}
+      ref={setNode}
       mode="inline"
       autoplay={String(autoplay)}
       {...(open ? { open: "" } : {})}
