@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+.data
+apps/platform/public/agent.js
+*.tsbuildinfo
+.DS_Store
+.superpowers/

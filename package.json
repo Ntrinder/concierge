@@ -1,0 +1,11 @@
+{
+  "name": "concierge",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm --filter @concierge/agent build && pnpm --filter platform build",
+    "start": "pnpm --filter platform start",
+    "test": "pnpm --filter @concierge/agent test"
+  }
+}

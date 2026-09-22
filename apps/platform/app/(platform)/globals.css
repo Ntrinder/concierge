@@ -1,0 +1,21 @@
+:root {
+  --ink: #16161a;
+  --ink-2: #55555e;
+  --ink-3: #8a8a93;
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --line: #e6e5df;
+  --ok: #1f7a4d;
+  --ok-soft: #e7f4ec;
+  --note: #8a5a00;
+  --note-soft: #fdf4e1;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-platform), system-ui, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
