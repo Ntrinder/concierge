@@ -1,11 +1,13 @@
 import { useEffect, useState } from "preact/hooks";
-import { removeConstraint, replay, send, submitNotify } from "../engine/engine";
+import { getProduct } from "../catalogs";
+import { markAdded, removeConstraint, replay, send, submitNotify } from "../engine/engine";
 import { varsToCss } from "../tokens";
 import type { AgentConfig } from "../types";
 import styles from "./styles.css?inline";
 import { cls } from "./cls";
 import { Composer } from "./Composer";
 import { ConstraintStrip } from "./ConstraintStrip";
+import { DetailSheet } from "./DetailSheet";
 import { Avatar, Header } from "./Header";
 import { CloseIcon } from "./icons";
 import { MessageList } from "./MessageList";
@@ -90,7 +92,24 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
                 onNotify={(id, email) => setConv((s) => submitNotify(s, id, email))}
               />
               <Composer replies={conv.replies} busy={busy} placeholder={placeholder} onSend={say} />
-              {/* Task 7: DetailSheet when `detail` is set; uses getProduct, markAdded */}
+              {detail && (() => {
+                const product = getProduct(config.store, detail);
+                if (!product) return null;
+                return (
+                  <DetailSheet
+                    config={config}
+                    product={product}
+                    onBack={() => setDetail(null)}
+                    onAdd={({ giftWrap }) => {
+                      window.dispatchEvent(new CustomEvent("concierge:add-to-cart", {
+                        detail: { productId: product.id, name: product.name, price: product.price, qty: 1, options: { giftWrap } },
+                      }));
+                      setDetail(null);
+                      setConv((s) => markAdded(s, product.id));
+                    }}
+                  />
+                );
+              })()}
             </div>
           </div>
         )}

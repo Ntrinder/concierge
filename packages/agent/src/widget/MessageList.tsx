@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { AgentConfig, Message } from "../types";
 import { Avatar } from "./Header";
-import { AddedNote, Compare, NotifyForm, ProductList } from "./ProductCard";
+import { Compare } from "./Compare";
+import { AddedNote, NotifyForm } from "./NotifyForm";
+import { ProductList } from "./ProductCard";
 
 interface Props {
   config: AgentConfig;
