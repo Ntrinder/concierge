@@ -35,6 +35,22 @@ describe("deriveTokens", () => {
     expect(tokens).toContain("--c-brand-edge");
   });
 
+  const CUSTOM_BACKGROUNDS = ["#767676", "#F6F1E7", "#101214", "#FFFFFF"];
+  const CUSTOM_BG_BRANDS = ["#7A2E2E", "#1E40FF", "#FFE600"];
+  for (const background of CUSTOM_BACKGROUNDS) {
+    for (const brand of CUSTOM_BG_BRANDS) {
+      for (const surface of ["light", "dark"] as const) {
+        it(`keeps AA contrast for brand ${brand} on custom background ${background} (${surface})`, () => {
+          const { vars } = deriveTokens({ ...base, brand, background, surface });
+          for (const [fg, bg] of TEXT_PAIRS) {
+            expect(contrast(vars[fg], vars[bg]), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          }
+          expect(contrast(vars["--c-brand-edge"], vars["--c-bg"])).toBeGreaterThanOrEqual(3);
+        });
+      }
+    }
+  }
+
   it("respects a custom background", () => {
     const { vars } = deriveTokens({ ...base, background: "#F6F1E7" });
     expect(vars["--c-bg"]).toBe("#f6f1e7");

@@ -29,6 +29,29 @@ export function ensureContrast(fg: string, bg: string, min: number): string {
   return darker ? "#000000" : "#ffffff";
 }
 
+/**
+ * Move fg's lightness until it reaches `min` contrast against EVERY background in
+ * `backgrounds` at once. A chain of single-target `ensureContrast` calls can undo
+ * itself (fixing contrast against one background can wreck it against another,
+ * e.g. two close-but-not-identical backgrounds like --c-surface and a custom
+ * --c-bg) — this steps in one direction and checks all targets together, so the
+ * result is one colour that reads on both. Falls back to black/white.
+ */
+export function ensureContrastAll(fg: string, backgrounds: string[], min: number): string {
+  const meetsAll = (c: string) => backgrounds.every((bg) => contrast(c, bg) >= min);
+  const start = formatHex(parse(fg)!);
+  if (meetsAll(start)) return start;
+  const base = lch(fg);
+  // Pick the step direction using whichever background is hardest to read against right now.
+  const hardest = backgrounds.reduce((worst, bg) => (contrast(start, bg) < contrast(start, worst) ? bg : worst));
+  const darker = contrast("#000000", hardest) >= contrast("#ffffff", hardest);
+  for (let step = 1; step <= 100; step++) {
+    const candidate = hex({ ...base, l: base.l + (darker ? -step : step) * 0.01 });
+    if (meetsAll(candidate)) return candidate;
+  }
+  return darker ? "#000000" : "#ffffff";
+}
+
 /** Best readable text colour on a fill: white, else near-black, else pure black. */
 export function bestOn(bg: string): string {
   if (contrast("#ffffff", bg) >= 4.5) return "#ffffff";
@@ -66,9 +89,16 @@ export function deriveTokens(config: AgentConfig): TokenResult {
 
   const surface = toward(0.035);
   const border = toward(0.12);
-  const text = ensureContrast(hex({ l: isDark ? 0.95 : 0.22, c: Math.min(b.c, 0.02), h: b.h }), surface, 7);
+  // Target 7:1 (AAA) against both --c-surface and --c-bg for extra headroom; this is
+  // best-effort — on an awkward mid-tone custom background 7:1 may be unreachable, in
+  // which case ensureContrastAll degrades toward black/white, which still clears AA
+  // (>=4.5) against both surfaces for any background that isn't itself near-midpoint
+  // grey on both poles.
+  const text = ensureContrastAll(hex({ l: isDark ? 0.95 : 0.22, c: Math.min(b.c, 0.02), h: b.h }), [surface, bgHex], 7);
   const mutedSeed = hex({ l: isDark ? 0.76 : 0.45, c: Math.min(b.c, 0.03), h: b.h });
-  const muted = ensureContrast(ensureContrast(mutedSeed, surface, 4.5), bgHex, 4.5);
+  // Must hold AA against BOTH --c-surface and --c-bg at once — a chain of two
+  // single-target ensureContrast calls can fix one and break the other.
+  const muted = ensureContrastAll(mutedSeed, [surface, bgHex], 4.5);
 
   const onBrand = bestOn(brand);
   if (onBrand !== "#ffffff") {
