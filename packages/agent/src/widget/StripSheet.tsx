@@ -6,18 +6,23 @@ import { CloseIcon } from "./icons";
 export function StripSheet({ constraints, onRemove, onClose }: { constraints: Constraint[]; onRemove: (key: string) => void; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { closeRef.current?.focus(); }, []);
+  // Capture on the document so Escape closes this sheet (not the whole panel) wherever focus is
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
 
   const remove = (key: string) => { onRemove(key); onClose(); };
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key !== "Escape") return;
-    e.stopPropagation();
-    onClose();
-  };
 
   return (
     <>
       <div class="strip-sheet-scrim" aria-hidden="true" onClick={onClose} />
-      <div class="strip-sheet" role="dialog" aria-label="What you're looking for" onKeyDown={onKeyDown}>
+      <div class="strip-sheet" role="dialog" aria-label="What you're looking for">
         <div class="strip-sheet-top">
           <h3 class="strip-sheet-heading">What you're looking for</h3>
           <button ref={closeRef} type="button" class="icon-btn" onClick={onClose} aria-label="Close"><CloseIcon /></button>
