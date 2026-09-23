@@ -15,7 +15,7 @@ export function Studio() {
         <ol className={s.steps} aria-label="Progress">
           {STEPS.map((label, i) => {
             const n = (i + 1) as 1 | 2 | 3;
-            const reachable = n === 1 || (n <= 3 && state.source !== undefined && (n < 3 || state.step >= 2));
+            const reachable = n === 1 || (state.source !== undefined && (n < 3 || state.step >= 2));
             return (
               <li key={label} aria-current={state.step === n ? "step" : undefined} className={state.step === n ? s.stepActive : state.step > n ? s.stepDone : undefined}>
                 <button type="button" disabled={!reachable} onClick={() => dispatch({ type: "step", step: n })}>

@@ -29,11 +29,16 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
   async function read(target = url) {
     if (!target.trim()) return;
     setUrl(target); setPhase("reading"); setTick(0); setError(""); setEx(null);
-    const res = await fetch("/api/extract", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: target }) });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error); setPhase("error"); return; }
-    setEx(data); setChosen(0);
-    setPhase(data.brand.length ? "found" : "weak");
+    try {
+      const res = await fetch("/api/extract", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: target }) });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) { setError(data?.error ?? "We couldn't reach that site just now. Check the address, or upload your logo instead."); setPhase("error"); return; }
+      setEx(data); setChosen(0);
+      setPhase(data.brand.length ? "found" : "weak");
+    } catch {
+      setError("We couldn't reach that site just now. Check the address, or upload your logo instead.");
+      setPhase("error");
+    }
   }
 
   function continueWithUrl() {
