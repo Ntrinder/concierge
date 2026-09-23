@@ -29,7 +29,7 @@ A real LLM, accounts/auth, a real catalog import pipeline (products are invented
 
 ## The weakest part
 
-URL extraction is best-effort and it shows on real, JS-heavy or anti-bot sites — `aesop.com` 403s the extractor's fetch outright, and even a cooperative site like `stripe.com` returns self-hosted font names that don't resolve to loadable web fonts and picks up the wrong logo image. There are no accounts: the edit token lives in one browser's local storage, so clearing it (or switching machines) means saving a new design and re-pasting the snippet. And 375px was verified with DevTools/simulated widths, not a real phone.
+URL extraction is best-effort and it shows on real, JS-heavy or anti-bot sites — `aesop.com` 403s the extractor's fetch outright, and even a cooperative site like `stripe.com` returns self-hosted font names that don't resolve to loadable web fonts and picks up the wrong logo image. There are no accounts: the edit token lives in one browser's local storage, so clearing it (or switching machines) means saving a new design and re-pasting the snippet. And 375px was verified in a genuine 375px-wide iframe viewport in desktop Chrome, not on a physical phone.
 
 ## With another hour
 
