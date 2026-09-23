@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState, type Dispatch } from "react";
 import { PRESETS, type PresetKey } from "@concierge/agent/core";
+import type { AgentConfig } from "@concierge/agent/core";
 import type { Extraction } from "@/lib/extract";
 import { paletteFromImage } from "@/lib/logoPalette";
-import { configFromExtraction, configFromPalette, configFromPreset, titleCase, type Action } from "./state";
+import { Match } from "./Match";
+import { configFromPalette, configFromPreset, titleCase, type Action, type SiteInfo } from "./state";
 import s from "./studio.module.css";
 
 const PROGRESS = ["Reading your homepage", "Finding your colours", "Finding your fonts", "Looking for your logo"];
@@ -14,7 +16,8 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
   const [tick, setTick] = useState(0);
   const [error, setError] = useState("");
   const [ex, setEx] = useState<Extraction | null>(null);
-  const [chosen, setChosen] = useState(0);
+  // Which "No website yet?" card is open; only one at a time, and none once a match succeeds
+  const [reveal, setReveal] = useState<"logo" | "style" | null>(null);
   const [logo, setLogo] = useState<{ colours: string[]; dataUrl: string; name: string } | null>(null);
   const [logoChosen, setLogoChosen] = useState(0);
   const [logoError, setLogoError] = useState("");
@@ -33,22 +36,26 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
     try {
       const res = await fetch("/api/extract", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: target }) });
       const data = await res.json().catch(() => null);
-      if (!res.ok || !data) { setError(data?.error ?? "We couldn't reach that site just now. Check the address, or upload your logo instead."); setPhase("error"); return; }
-      setEx(data); setChosen(0);
+      if (!res.ok || !data) { setError(data?.error ?? "We couldn't reach that site just now. Check the address, or upload your logo instead."); setPhase("error"); setReveal("logo"); return; }
+      setEx(data);
       setPhase(data.brand.length ? "found" : "weak");
+      // A weak read points at the logo upload, so open it
+      if (!data.brand.length) setReveal("logo");
     } catch {
       setError("We couldn't reach that site just now. Check the address, or upload your logo instead.");
-      setPhase("error");
+      setPhase("error"); setReveal("logo");
     }
   }
 
-  function continueWithUrl() {
+  function continueWithUrl(config: AgentConfig, site: SiteInfo) {
     if (!ex) return;
-    const reordered = { ...ex, brand: [ex.brand[chosen]!, ...ex.brand.filter((_, i) => i !== chosen)] };
-    const name = ex.name || new URL(ex.url).hostname;
-    dispatch({ type: "start", source: "url", extraction: ex, config: configFromExtraction(reordered), candidates: ex.brand,
-      site: { name, font: ex.fonts[0], fontUrl: ex.fontUrl, logo: ex.logo, nav: ex.nav, headline: ex.headline, eyebrow: ex.eyebrow, button: ex.button,
-        background: ex.background, text: ex.text, headingFont: ex.headingFont, bodyFont: ex.bodyFont } });
+    dispatch({ type: "start", source: "url", extraction: ex, config, candidates: ex.brand, site });
+  }
+
+  /** Back to the pre-match page, optionally with one of the "No website yet?" cards open. */
+  function backToStart(card: "logo" | "style" | null) {
+    setPhase("idle"); setReveal(card);
+    if (!card) setEx(null);
   }
 
   async function onLogo(file: File | undefined) {
@@ -75,6 +82,8 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
   function startFromPreset(key: PresetKey) {
     dispatch({ type: "start", source: "style", config: configFromPreset(key), candidates: [], site: { name: "Your store" } });
   }
+
+  if (phase === "found" && ex) return <Match ex={ex} onContinue={continueWithUrl} onRetry={() => backToStart(null)} onAlt={backToStart} />;
 
   return (
     <main className={s.start}>
@@ -108,37 +117,12 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
         </p>
       )}
 
-      {phase === "found" && ex && (
-        <section className={s.found} aria-label="What we found">
-          <h2 className={s.h2}>Here's what we found on {ex.name ?? "your site"}</h2>
-          <div className={s.foundGrid}>
-            <div>
-              <h3 className={s.h3}>Brand colour <span className={s.muted}>— tap to choose</span></h3>
-              <div className={s.swatches} role="radiogroup" aria-label="Brand colour">
-                {ex.brand.map((b, i) => (
-                  <button key={b.hex} type="button" role="radio" aria-checked={chosen === i} className={s.swatchBtn} onClick={() => setChosen(i)}>
-                    <span className={s.swatch} style={{ background: b.hex }} />
-                    <span className={s.swatchHex}>{b.hex.toUpperCase()}</span>
-                    <span className={s.swatchWhy}>{b.reason}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className={s.h3}>Font</h3>
-              <p className={s.foundValue} style={{ fontFamily: ex.fonts[0] ? `"${ex.fonts[0]}"` : undefined }}>{ex.fonts[0] ?? "We'll use your site's own font"}</p>
-              {ex.fontUrl && <link rel="stylesheet" href={ex.fontUrl} />}
-              <h3 className={s.h3}>Logo</h3>
-              {ex.logo ? <img src={ex.logo} alt="Your logo" className={s.foundLogo} /> : <p className={s.muted}>Not found — we'll use your initials.</p>}
-              {ex.background && <><h3 className={s.h3}>Background</h3><p className={s.foundValue}><span className={s.miniSwatch} style={{ background: ex.background }} /> {ex.background.toUpperCase()}</p></>}
-            </div>
-          </div>
-          <button type="button" className={s.primary} onClick={continueWithUrl}>Looks right — continue</button>
-        </section>
-      )}
-
-      <div className={s.alternatives}>
-        <section className={s.altCard}>
+      <p className={s.altLine}>No website yet?{" "}
+        <button type="button" className={s.linkBtn} aria-expanded={reveal === "logo"} aria-controls="alt-logo" onClick={() => setReveal((r) => (r === "logo" ? null : "logo"))}>Upload a logo</button> or{" "}
+        <button type="button" className={s.linkBtn} aria-expanded={reveal === "style"} aria-controls="alt-style" onClick={() => setReveal((r) => (r === "style" ? null : "style"))}>start from a style</button>.
+      </p>
+      {reveal === "logo" && (
+        <section className={s.altCard} id="alt-logo" aria-label="Upload your logo">
           <h2 className={s.h3}>Upload your logo</h2>
           <p className={s.muted}>We'll pull your brand colours out of it.</p>
           <label className={s.fileLabel}>
@@ -162,7 +146,9 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
             </div>
           )}
         </section>
-        <section className={s.altCard}>
+      )}
+      {reveal === "style" && (
+        <section className={s.altCard} id="alt-style" aria-label="Start from a style">
           <h2 className={s.h3}>Start from a style</h2>
           <p className={s.muted}>Pick the closest feel; adjust everything next.</p>
           <div className={s.presets}>
@@ -179,7 +165,7 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
             })}
           </div>
         </section>
-      </div>
+      )}
     </main>
   );
 }

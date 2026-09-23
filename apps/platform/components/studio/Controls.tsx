@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
 import { googleFontUrl, type AgentConfig, type CardStyle, type Density, type Shape, type Voice } from "@concierge/agent/core";
 import { FONT_CHOICES } from "@/lib/fonts";
+import { normalizeHex } from "./hex";
 import { isDarkHex, type Action, type StudioState } from "./state";
 import s from "./studio.module.css";
 
@@ -11,14 +12,6 @@ const VOICES: [Voice, string, string][] = [
   ["terse", "Straight to it", "“3 matches. Sorted by fit.”"],
 ];
 const FONT_URL_PREFIX = "https://fonts.googleapis.com/";
-
-/** Accepts a 3- or 6-digit hex, with or without a leading "#"; returns a normalised "#rrggbb" or null. */
-function normalizeHex(raw: string): string | null {
-  const body = raw.trim().replace(/^#/, "");
-  if (/^[0-9a-f]{6}$/i.test(body)) return `#${body.toLowerCase()}`;
-  if (/^[0-9a-f]{3}$/i.test(body)) return `#${body.toLowerCase().split("").map((c) => c + c).join("")}`;
-  return null;
-}
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return <fieldset className={s.group}><legend>{title}</legend>{children}</fieldset>;
@@ -31,7 +24,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
  * draft resyncs from `value` whenever it changes elsewhere (swatches, colour
  * picker, surface toggle) as long as the field isn't focused.
  */
-function HexField({ id, label, description, value, allowClear, placeholder, onCommit }: {
+export function HexField({ id, label, description, value, allowClear, placeholder, onCommit }: {
   id: string;
   label: string;
   description?: string;
