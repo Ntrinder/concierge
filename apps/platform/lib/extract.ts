@@ -96,7 +96,8 @@ async function fetchOnce(url: URL, cap: number): Promise<{ text: string; redirec
   return { text: buf.subarray(0, cap).toString("utf-8") };
 }
 
-async function fetchText(rawUrl: string, cap: number): Promise<string> {
+/** Guarded fetch: SSRF-checked, manual redirects re-checked at every hop, byte-capped. */
+export async function fetchText(rawUrl: string, cap: number): Promise<string> {
   let url = new URL(rawUrl);
   assertPublicUrl(url);
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {

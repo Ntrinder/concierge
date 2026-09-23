@@ -197,8 +197,14 @@
 .install .h1, .install .lede { margin-bottom: 0; }
 .demoLinks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
 .snippet { display: flex; gap: 12px; align-items: center; padding: 16px; background: #16161a; color: #f4f4ef; border-radius: 14px; }
-.snippet code { flex: 1; min-width: 0; font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+/* Wraps only at spaces between attributes, never mid-attribute; overflow-x is a fallback for very narrow widths */
+.snippet code { flex: 1; min-width: 0; font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; word-break: normal; overflow-wrap: normal; overflow-x: auto; }
 .snippet .primary { background: #f4f4ef; color: #16161a; flex: none; }
+.designId { font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-3); }
+.emailForm { display: grid; gap: 6px; max-width: 440px; }
+.checkForm { display: flex; gap: 8px; max-width: 440px; }
+.checkForm .input { flex: 1; min-width: 0; }
+.checkLive { margin: 0; font-weight: 600; color: var(--ok); }
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
 .tabs button { border: 0; background: none; padding: 10px 12px; font-size: 14px; color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--ink); }
@@ -207,4 +213,4 @@
 .tryLive { padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .tryLive p { margin: 6px 0 0; }
 .secondary { justify-self: start; height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer; }
-@media (max-width: 640px) { .snippet { flex-direction: column; align-items: stretch; } }
+@media (max-width: 560px) { .snippet { flex-direction: column; align-items: stretch; } }

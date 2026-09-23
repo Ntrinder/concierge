@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type Dispatch } from "react";
+import { useEffect, useRef, useState, type Dispatch, type FormEvent } from "react";
 import type { Action, StudioState } from "./state";
 import s from "./studio.module.css";
 
@@ -21,9 +21,23 @@ const DEMOS = [
 function demoLinks(current: StudioState["config"]["store"]) {
   return [...DEMOS].sort((a, b) => Number(b.store === current) - Number(a.store === current)).map((d) => ({
     store: d.store,
-    label: d.store === current ? `See it on the ${d.shop} demo (with your ${d.products})` : `Or try it on the ${d.shop} demo (with ${d.products})`,
+    label: d.store === current ? `See it on the ${d.shop} demo (with ${d.products})` : `Or try it on the ${d.shop} demo (with ${d.products})`,
   }));
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** hostname + path (when the path isn't just "/"), for the check-my-site status lines. */
+function hostLabel(rawUrl: string): string {
+  try {
+    const u = new URL(/^https?:\/\//.test(rawUrl) ? rawUrl : `https://${rawUrl}`);
+    return u.pathname !== "/" ? `${u.hostname}${u.pathname}` : u.hostname;
+  } catch {
+    return rawUrl;
+  }
+}
+
+type CheckStatus = "idle" | "checking" | "live" | "other" | "missing" | "error";
 
 export function StepInstall({ state, dispatch }: { state: StudioState; dispatch: Dispatch<Action> }) {
   const [status, setStatus] = useState<"saving" | "saved" | "error" | "forbidden">("saving");
@@ -31,6 +45,13 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "fallback">("idle");
   const [tab, setTab] = useState<Tab>("any");
   const [origin, setOrigin] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailSent, setEmailSent] = useState("");
+  const [checkUrl, setCheckUrl] = useState(state.extraction?.url ?? "");
+  const [checkStatus, setCheckStatus] = useState<CheckStatus>("idle");
+  const [checkHost, setCheckHost] = useState("");
+  const [checkFound, setCheckFound] = useState("");
+  const [checkError, setCheckError] = useState("");
 
   const startedRef = useRef(false);
   const cancelledRef = useRef(false);
@@ -100,6 +121,29 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
       setTimeout(() => setCopyStatus("idle"), 4000);
     }
   };
+  function submitEmail(e: FormEvent) {
+    e.preventDefault();
+    const value = email.trim();
+    if (!EMAIL_RE.test(value)) return;
+    setEmailSent(value);
+  }
+
+  function runCheck() {
+    const host = hostLabel(checkUrl);
+    setCheckHost(host);
+    setCheckStatus("checking");
+    fetch("/api/install-check", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: checkUrl, id }) })
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({ status: "error", error: "Something went wrong — try again." }));
+        if (data.status === "live") { setCheckStatus("live"); return; }
+        if (data.status === "other") { setCheckFound(data.found ?? ""); setCheckStatus("other"); return; }
+        if (data.status === "missing") { setCheckStatus("missing"); return; }
+        setCheckError(data.error ?? "Something went wrong — try again.");
+        setCheckStatus("error");
+      })
+      .catch(() => { setCheckError("Something went wrong — check your connection and try again."); setCheckStatus("error"); });
+  }
+
   const mail = `mailto:?subject=${encodeURIComponent(`Please add our shopping assistant to ${state.site.name}`)}&body=${encodeURIComponent(
     `Hi,\n\nCould you add this snippet just before the closing </body> tag on every page of our site?\n\n${snippet}\n\nIt loads asynchronously and won't affect page speed or styles (it renders inside its own Shadow DOM).\n\nThanks!`,
   )}`;
@@ -107,7 +151,7 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
   return (
     <main className={s.install}>
       <h1 className={s.h1}>Add it to your site</h1>
-      <p className={s.lede}>One line of code. Come back to this studio in the same browser and any changes you save update your site automatically — no need to paste it again.</p>
+      <p className={s.lede}>One line of code. Paste it once — any changes you save later update your site automatically.</p>
 
       {status === "saving" && <p className={s.muted} aria-live="polite">Saving your design…</p>}
       {status === "error" && <p className={s.notice} role="alert">{error} <button type="button" className={s.linkBtn} onClick={() => dispatch({ type: "step", step: 2 })}>Back to editing</button></p>}
@@ -127,6 +171,19 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
           </span>
           {copyStatus === "fallback" && (
             <p className={s.notice} role="alert">Couldn't copy automatically — the snippet is selected, press ⌘C / Ctrl+C to copy.</p>
+          )}
+          <p className={s.designId}>Design ID: {id}</p>
+
+          {emailSent ? (
+            <p className={s.muted}>Demo: we'd email {emailSent} a link to edit design {id}. No email is sent and we don't keep your address.</p>
+          ) : (
+            <form className={s.emailForm} onSubmit={submitEmail}>
+              <label className={s.label} htmlFor="studio-edit-email">Email me a link to edit this later</label>
+              <div className={s.checkForm}>
+                <input id="studio-edit-email" className={s.input} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@yourstore.com" />
+                <button type="submit" className={s.primary}>Send link</button>
+              </div>
+            </form>
           )}
 
           <div className={s.tabs} role="tablist" aria-label="Where is your store?">
@@ -153,6 +210,26 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
               ))}
             </ul>
           </div>
+
+          <div className={s.tryLive}>
+            <h2 className={s.h3}>Check my site</h2>
+            <form className={s.checkForm} onSubmit={(e) => { e.preventDefault(); runCheck(); }}>
+              <input className={s.input} type="text" value={checkUrl} onChange={(e) => setCheckUrl(e.target.value)} placeholder="yourstore.com" disabled={checkStatus === "checking"} />
+              <button type="submit" className={s.primary} disabled={checkStatus === "checking" || !checkUrl.trim()}>Check my site</button>
+            </form>
+            {checkStatus === "checking" && <p className={s.muted} aria-live="polite">Checking {checkHost}…</p>}
+            {checkStatus === "live" && <p className={s.checkLive}>Live on {checkHost} ✓</p>}
+            {checkStatus === "other" && (
+              <p className={s.notice}>We found Concierge on {checkHost}, but with a different design ({checkFound}). Paste the snippet above to use this one.</p>
+            )}
+            {checkStatus === "missing" && (
+              <p className={s.notice}>Not found yet — it can take a few minutes after publishing. <button type="button" className={s.linkBtn} onClick={runCheck}>Check again</button></p>
+            )}
+            {checkStatus === "error" && (
+              <p className={s.notice} role="alert">{checkError} <button type="button" className={s.linkBtn} onClick={runCheck}>Check again</button></p>
+            )}
+          </div>
+
           <button type="button" className={s.secondary} onClick={() => dispatch({ type: "step", step: 2 })}>← Keep editing the design</button>
         </>
       )}
