@@ -15,7 +15,8 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* Launcher */
 .launcher {
-  position: fixed; right: 20px; bottom: 20px; z-index: 2147483000;
+  position: fixed; z-index: 2147483000;
+  right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   display: inline-flex; align-items: center; gap: var(--s-2);
   min-height: 52px; padding: 6px var(--s-4) 6px 6px;
   border: 1px solid var(--c-brand-edge); border-radius: var(--r-btn);
@@ -26,8 +27,11 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .launcher:hover { background: var(--c-brand-hover); transform: translateY(-1px); }
 .launcher.is-open { padding: 6px; }
-.left .launcher, .left .panel { right: auto; left: 20px; }
+.left .launcher, .left .panel { right: auto; left: calc(20px + env(safe-area-inset-left, 0px)); }
 .inline .launcher, .inline .panel { position: absolute; }
+.inline .launcher { right: 20px; bottom: 20px; }
+.inline .panel { right: 20px; bottom: 86px; }
+.inline.left .launcher, .inline.left .panel { right: auto; left: 20px; }
 
 .avatar {
   width: 40px; height: 40px; flex: none; border-radius: 50%; overflow: hidden;
@@ -40,7 +44,8 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* Panel */
 .panel {
-  position: fixed; right: 20px; bottom: 86px; z-index: 2147483000;
+  position: fixed; z-index: 2147483000;
+  right: calc(20px + env(safe-area-inset-right, 0px)); bottom: calc(86px + env(safe-area-inset-bottom, 0px));
   width: min(400px, calc(100vw - 40px)); height: min(680px, calc(100vh - 116px));
   display: flex; flex-direction: column; overflow: hidden;
   background: var(--c-bg); border: 1px solid var(--c-border); border-radius: var(--r-lg);

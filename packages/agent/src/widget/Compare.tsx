@@ -21,7 +21,7 @@ export function Compare({ config, productIds, compact, onChoose }: { config: Age
               {labels.map((l) => <div key={l}><dt>{l}</dt><dd class={mono ? "mono" : ""}>{specOf(p, l)}</dd></div>)}
               {!mono && <div><dt>Why</dt><dd>{p.why}</dd></div>}
             </dl>
-            <button type="button" class="btn btn-primary btn-block t-btn" onClick={() => onChoose(p.id)}>Choose this one</button>
+            <button type="button" class="btn btn-primary btn-block t-btn" aria-label={`Choose ${p.name}`} onClick={() => onChoose(p.id)}>Choose this one</button>
           </div>
         ))}
       </div>
@@ -41,7 +41,7 @@ export function Compare({ config, productIds, compact, onChoose }: { config: Age
           ))}
           {!mono && <tr><th scope="row">Why</th>{products.map((p) => <td key={p.id}>{p.why}</td>)}</tr>}
           <tr class="compare-actions"><th scope="row"><span class="sr">Choose</span></th>{products.map((p) => (
-            <td key={p.id}><button type="button" class="btn btn-primary t-btn" onClick={() => onChoose(p.id)}>Choose</button></td>
+            <td key={p.id}><button type="button" class="btn btn-primary t-btn" aria-label={`Choose ${p.name}`} onClick={() => onChoose(p.id)}>Choose</button></td>
           ))}</tr>
         </tbody>
       </table>

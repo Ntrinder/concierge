@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { getProduct } from "../catalogs";
 import { markAdded, removeConstraint, replay, send, submitNotify } from "../engine/engine";
 import { varsToCss } from "../tokens";
@@ -60,6 +60,29 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
     return () => { document.documentElement.style.overflow = prev; };
   }, [open, compact, inline]);
 
+  // Closing returns focus to the launcher (keyboard users land where they started)
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const refocus = useRef(false);
+  const close = () => { refocus.current = true; setOpen(false); };
+  useEffect(() => {
+    if (open || !refocus.current) return;
+    refocus.current = false;
+    launcherRef.current?.focus();
+  }, [open]);
+
+  // Escape closes the detail sheet first, then the panel (page mode only — an
+  // inline preview shouldn't react to keys pressed elsewhere on the host page)
+  useEffect(() => {
+    if (inline || !open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (detail) { setDetail(null); return; }
+      close();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [inline, open, detail]);
+
   const say = (text: string) => setConv((s) => send(s, text));
   const busy = visible < conv.messages.length;
   const placeholder = conv.messages.length === 0 ? "Tell me what you're looking for…" : "Reply or ask something else…";
@@ -70,14 +93,14 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
       <style>{varsToCss(vars)}</style>
       <div class={cls("root", inline ? "inline" : "page", compact && "compact", config.launcher.position === "bottom-left" && "left", highlight && `hl-${highlight}`)}>
         {!(open && compact) && (
-          <button type="button" class={cls("launcher t-btn", open && "is-open")} aria-expanded={open} onClick={() => setOpen(!open)}
+          <button ref={launcherRef} type="button" class={cls("launcher t-btn", open && "is-open")} aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}
             aria-label={open ? "Close assistant" : config.launcher.label ?? config.agent.name}>
             {open ? <span class="avatar"><CloseIcon /></span> : <><Avatar config={config} /><span>{config.launcher.label ?? config.agent.name}</span></>}
           </button>
         )}
         {open && (
           <div class="panel" role="dialog" aria-label={config.agent.name}>
-            <Header config={config} onClose={() => setOpen(false)} />
+            <Header config={config} onClose={close} />
             <div class="body">
               <ConstraintStrip constraints={strip.constraints} turn={strip.turn} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
               <MessageList

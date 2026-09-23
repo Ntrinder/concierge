@@ -17,7 +17,7 @@ if (script && id) {
     })
     .then((config) => {
       // Relative avatar paths are relative to the Concierge host, not the merchant's site
-      if (config.agent.avatar?.startsWith("/")) config.agent.avatar = origin + config.agent.avatar;
+      if (typeof config?.agent?.avatar === "string" && config.agent.avatar.startsWith("/")) config.agent.avatar = origin + config.agent.avatar;
       const el = document.createElement("concierge-agent") as ConciergeAgent;
       el.config = config;
       document.body.appendChild(el);
