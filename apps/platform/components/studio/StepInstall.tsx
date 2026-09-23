@@ -15,12 +15,13 @@ const STEPS: Record<Exclude<Tab, "dev">, string[]> = {
 export function StepInstall({ state, dispatch }: { state: StudioState; dispatch: Dispatch<Action> }) {
   const [status, setStatus] = useState<"saving" | "saved" | "error">("saving");
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "fallback">("idle");
   const [tab, setTab] = useState<Tab>("any");
   const [origin, setOrigin] = useState("");
 
   const startedRef = useRef(false);
   const cancelledRef = useRef(false);
+  const codeRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -54,10 +55,32 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
 
   const id = state.savedId;
   const snippet = id ? `<script src="${origin}/agent.js" data-config="${id}" async></script>` : "";
+
+  function selectSnippetText() {
+    const el = codeRef.current;
+    if (!el || typeof window === "undefined") return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
   const copy = async () => {
-    await navigator.clipboard.writeText(snippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
+      await navigator.clipboard.writeText(snippet);
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2200);
+    } catch {
+      // Non-secure origin, permission denied, or no Clipboard API: select the
+      // snippet text so the merchant can copy it with the keyboard instead of
+      // the button silently doing nothing.
+      selectSnippetText();
+      setCopyStatus("fallback");
+      setTimeout(() => setCopyStatus("idle"), 4000);
+    }
   };
   const mail = `mailto:?subject=${encodeURIComponent(`Please add our shopping assistant to ${state.site.name}`)}&body=${encodeURIComponent(
     `Hi,\n\nCould you add this snippet just before the closing </body> tag on every page of our site?\n\n${snippet}\n\nIt loads asynchronously and won't affect page speed or styles (it renders inside its own Shadow DOM).\n\nThanks!`,
@@ -74,9 +97,16 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
       {status === "saved" && id && (
         <>
           <div className={s.snippet}>
-            <code>{snippet}</code>
-            <button type="button" className={s.primary} onClick={copy} aria-live="polite">{copied ? "Copied ✓" : "Copy snippet"}</button>
+            <code ref={codeRef}>{snippet}</code>
+            <button type="button" className={s.primary} onClick={copy}>{copyStatus === "copied" ? "Copied ✓" : "Copy snippet"}</button>
           </div>
+          <span className={s.srOnly} role="status" aria-live="polite">
+            {copyStatus === "copied" && "Copied"}
+            {copyStatus === "fallback" && "Couldn't copy automatically — the snippet is selected, press ⌘C or Ctrl+C to copy."}
+          </span>
+          {copyStatus === "fallback" && (
+            <p className={s.notice} role="alert">Couldn't copy automatically — the snippet is selected, press ⌘C / Ctrl+C to copy.</p>
+          )}
 
           <div className={s.tabs} role="tablist" aria-label="Where is your store?">
             {TABS.map(([t, label]) => (
