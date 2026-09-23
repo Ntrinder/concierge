@@ -125,7 +125,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
                 onBend={(key, id) => setConv((s) => bendConstraint(s, key, id))}
                 onNotify={(id, email) => setConv((s) => submitNotify(s, id, email))}
               />
-              <Composer replies={conv.replies} busy={busy} placeholder={placeholder} onSend={say} />
+              <Composer replies={conv.replies} busy={busy} placeholder={placeholder} start={conv.messages.length === 0} onSend={say} />
               {detail && (() => {
                 const product = getProduct(config.store, detail);
                 if (!product) return null;

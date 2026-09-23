@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 import type { Reply } from "../types";
 import { SendIcon } from "./icons";
 
-export function Composer({ replies, busy, placeholder, onSend }: { replies: Reply[]; busy: boolean; placeholder: string; onSend: (text: string) => void }) {
+export function Composer({ replies, busy, placeholder, start, onSend }: { replies: Reply[]; busy: boolean; placeholder: string; start: boolean; onSend: (text: string) => void }) {
   const [text, setText] = useState("");
   const submit = (e: Event) => {
     e.preventDefault();
@@ -14,7 +14,7 @@ export function Composer({ replies, busy, placeholder, onSend }: { replies: Repl
   return (
     <div class="composer-wrap">
       {!busy && replies.length > 0 && (
-        <div class="replies" role="group" aria-label="Suggested replies">
+        <div class={start ? "replies is-start" : "replies"} role="group" aria-label="Suggested replies">
           {replies.slice(0, 3).map((r, i) => (
             <button type="button" key={`${i}-${r.text}`} class="reply t-link" title={r.text} onClick={() => onSend(r.text)}>{r.label}</button>
           ))}

@@ -178,6 +178,9 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .replies::-webkit-scrollbar { display: none; }
 .replies::after { content: ""; flex: none; width: 12px; }
+/* Empty state: there is room, so show every starter prompt instead of a scroller */
+.replies.is-start { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+.replies.is-start::after { display: none; }
 .reply {
   flex: none; white-space: nowrap;
   min-height: 40px; padding: 0 var(--s-3);
@@ -295,8 +298,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .compare-why td { text-align: left; font-size: var(--fs-sm); }
 .compare-actions td, .compare-actions th { border-bottom: 0; }
 .compare-actions .btn { min-height: 44px; width: 100%; }
-.compact .compare thead th { overflow-wrap: anywhere; }
-.compact .compare tbody th { width: 30%; }
+.compact .compare thead th { font-size: var(--fs-sm); overflow-wrap: break-word; hyphens: auto; }
+.compact .compare thead th:first-child { width: 24%; }
 .compact .compare th, .compact .compare td { padding: var(--s-2) 6px; }
 .compare-done { display: grid; gap: var(--s-3); }
 .compare-done-row { display: flex; gap: var(--s-3); align-items: center; padding: var(--s-3); border-radius: var(--r-md); }

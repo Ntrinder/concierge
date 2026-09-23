@@ -33,7 +33,7 @@ export function Compare({ config, productIds, chosen, onChoose }: { config: Agen
   const priceDiff = differs(products.map((p) => formatPrice(p.price)));
 
   return (
-    <div class="compare">
+    <div class="compare" lang="en">
       <table>
         <thead>
           <tr><th scope="col"><span class="sr">Attribute</span></th>{products.map((p) => <th scope="col" key={p.id}>{p.name}</th>)}</tr>
