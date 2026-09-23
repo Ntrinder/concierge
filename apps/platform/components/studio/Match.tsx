@@ -68,7 +68,7 @@ export function Match({ ex, onContinue, onRetry, onAlt }: {
     name, font: ex.fonts[0], fontUrl: ex.fontUrl, logo: uploaded ?? ex.logo, nav: ex.nav, headline: ex.headline, eyebrow: ex.eyebrow,
     button: ex.button, background: ex.background, text: ex.text, headingFont: ex.headingFont, bodyFont: ex.bodyFont,
   };
-  const siteHost = ex.background ? (isDarkHex(ex.background) ? "dark" : "light") : draft.surface;
+  const siteHost = ex.background && isDarkHex(ex.background) ? "dark" : "light";
 
   // Brand
   const brandCand = ex.brand.find((b) => same(b.hex, draft.brand));
@@ -227,7 +227,7 @@ export function Match({ ex, onContinue, onRetry, onAlt }: {
       <div className={s.matchPreview} style={{ fontFamily: site.font ? `"${site.font}", system-ui, sans-serif` : undefined }}>
         <HomepageMock config={draft} site={site} host={siteHost} device="desktop" />
         <div className={s.agentLayer}>
-          <AgentPreview config={draft} autoplay={2} open />
+          <AgentPreview config={draft} autoplay={1} open />
         </div>
       </div>
     </main>

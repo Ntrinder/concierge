@@ -18,10 +18,11 @@ const onFill = (bg: string) => (contrast("#ffffff", bg) >= 4.5 ? "#ffffff" : "#1
  */
 export function HomepageMock({ config, site, host, device }: { config: AgentConfig; site: SiteInfo; host: "light" | "dark"; device: "desktop" | "mobile" }) {
   const dark = host === "dark";
-  const siteDark = site.background ? isDarkHex(site.background) : config.surface === "dark";
+  // Their page, not the assistant: with no background read from their site it's a plain white page
+  const siteDark = site.background ? isDarkHex(site.background) : false;
   const own = siteDark === dark;
   const neutral = dark ? NEUTRAL.dark : NEUTRAL.light;
-  const bg = own ? site.background ?? config.background ?? neutral.bg : neutral.bg;
+  const bg = own ? site.background ?? neutral.bg : neutral.bg;
   const ink = own && site.background && site.text ? site.text : neutral.ink;
   const heading = site.headingFont ?? config.font.display;
   const headingStyle = {
