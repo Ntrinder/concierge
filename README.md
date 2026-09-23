@@ -15,6 +15,10 @@ Requires Node 22+ and pnpm 9.
     pnpm dev          # agent watch build + next dev on http://localhost:3000
     pnpm test         # token engine, matcher, conversation engine, style lint
 
+The studio's "Try a demo store" shortcut reads the demo pages on this same server. Under `pnpm dev` any `localhost`/`127.0.0.1` port is allowed; a local production build (`pnpm start`) blocks loopback like any private address, so either use `pnpm dev` or allow your host explicitly, e.g. `EXTRACT_ALLOW_HOSTS=localhost:3000 pnpm start`.
+
+Saving a design returns a one-time edit token (kept in the studio's local storage). Only its SHA-256 is stored, next to the config; overwriting that config id requires the token.
+
 Widget-only harness: `pnpm --filter @concierge/agent harness` (add `?lab` or `?autoplay=4`).
 
 ## How it fits together

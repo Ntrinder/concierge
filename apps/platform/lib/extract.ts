@@ -26,22 +26,26 @@ const UA = "Mozilla/5.0 (compatible; ConciergeBrandReader/1.0; +https://concierg
 const PRIVATE = /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1\]?$)/;
 const MAX_REDIRECTS = 3;
 
-function devAllowedHosts(): Set<string> {
-  const raw = process.env.EXTRACT_ALLOW_HOSTS ?? "localhost:3000,127.0.0.1:3000";
+/** Hosts the operator explicitly allowed via EXTRACT_ALLOW_HOSTS (host:port, comma-separated). */
+function operatorAllowedHosts(): Set<string> {
+  const raw = process.env.EXTRACT_ALLOW_HOSTS ?? "";
   return new Set(raw.split(",").map((h) => h.trim()).filter(Boolean));
 }
 
+const LOCAL_DEV_HOST = /^(localhost|127\.0\.0\.1)$/;
+
 /**
  * Single source of truth for the SSRF guard: blocks non-http(s) protocols and
- * private/loopback/link-local hosts. In non-production, hosts explicitly listed in
- * EXTRACT_ALLOW_HOSTS (default localhost:3000,127.0.0.1:3000) are allowed so the demo
- * stores work in dev — this allowlist is never consulted in production, and it is never
- * derived from a client-supplied header.
+ * private/loopback/link-local hosts, with two narrow exceptions so the demo stores
+ * work locally: in non-production, localhost / 127.0.0.1 on any port; and in any
+ * environment, hosts the operator listed in EXTRACT_ALLOW_HOSTS (e.g. for a local
+ * `pnpm start`). Neither is ever derived from a client-supplied header.
  */
 export function assertPublicUrl(url: URL): void {
   if (!/^https?:$/.test(url.protocol)) throw new Error("Blocked protocol");
   if (!PRIVATE.test(url.hostname)) return;
-  if (process.env.NODE_ENV !== "production" && devAllowedHosts().has(url.host)) return;
+  if (process.env.NODE_ENV !== "production" && LOCAL_DEV_HOST.test(url.hostname)) return;
+  if (operatorAllowedHosts().has(url.host)) return;
   throw new Error("Blocked private/loopback host");
 }
 
