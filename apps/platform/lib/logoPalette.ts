@@ -18,7 +18,8 @@ export async function paletteFromImage(file: File): Promise<{ colours: string[];
     const size = 64;
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("Canvas unavailable");
     ctx.drawImage(img, 0, 0, size, size);
     const { data } = ctx.getImageData(0, 0, size, size);
 
@@ -47,10 +48,17 @@ export async function paletteFromImage(file: File): Promise<{ colours: string[];
 
     const avatar = document.createElement("canvas");
     avatar.width = avatar.height = 128;
-    const actx = avatar.getContext("2d")!;
-    const scale = Math.min(128 / img.width, 128 / img.height);
-    const w = img.width * scale, h = img.height * scale;
-    actx.drawImage(img, (128 - w) / 2, (128 - h) / 2, w, h);
+    const actx = avatar.getContext("2d");
+    if (!actx) throw new Error("Canvas unavailable");
+    // SVGs without width/height attributes report a 0×0 intrinsic size: draw them square
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    if (iw > 0 && ih > 0) {
+      const scale = Math.min(128 / iw, 128 / ih);
+      const w = iw * scale, h = ih * scale;
+      actx.drawImage(img, (128 - w) / 2, (128 - h) / 2, w, h);
+    } else {
+      actx.drawImage(img, 0, 0, 128, 128);
+    }
 
     return { colours, dataUrl: avatar.toDataURL("image/png") };
   } finally {

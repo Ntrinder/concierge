@@ -3,7 +3,7 @@ import { useEffect, useState, type Dispatch } from "react";
 import { PRESETS, type PresetKey } from "@concierge/agent/core";
 import type { Extraction } from "@/lib/extract";
 import { paletteFromImage } from "@/lib/logoPalette";
-import { configFromExtraction, configFromPalette, configFromPreset, type Action } from "./state";
+import { configFromExtraction, configFromPalette, configFromPreset, titleCase, type Action } from "./state";
 import s from "./studio.module.css";
 
 const PROGRESS = ["Reading your homepage", "Finding your colours", "Finding your fonts", "Looking for your logo"];
@@ -17,6 +17,7 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
   const [chosen, setChosen] = useState(0);
   const [logo, setLogo] = useState<{ colours: string[]; dataUrl: string; name: string } | null>(null);
   const [logoChosen, setLogoChosen] = useState(0);
+  const [logoError, setLogoError] = useState("");
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -51,9 +52,16 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
 
   async function onLogo(file: File | undefined) {
     if (!file) return;
-    const { colours, dataUrl } = await paletteFromImage(file);
-    const name = ex?.name || file.name.replace(/\.[a-z]+$/i, "").replace(/[-_]+/g, " ").replace(/\blogo\b/i, "").trim() || "Your store";
-    setLogo({ colours, dataUrl, name }); setLogoChosen(0);
+    setLogoError("");
+    try {
+      const { colours, dataUrl } = await paletteFromImage(file);
+      const fromFile = file.name.replace(/\.[a-z]+$/i, "").replace(/[-_]+/g, " ").replace(/\blogo\b/i, "").replace(/\s+/g, " ").trim();
+      const name = ex?.name || (fromFile ? titleCase(fromFile) : "Your store");
+      setLogo({ colours, dataUrl, name }); setLogoChosen(0);
+    } catch {
+      setLogo(null);
+      setLogoError("We couldn't read that image. Try a PNG or JPG of your logo, or start from a style instead.");
+    }
   }
 
   function continueWithLogo() {
@@ -136,6 +144,7 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
             <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onChange={(e) => onLogo(e.target.files?.[0])} />
             Choose a file
           </label>
+          {logoError && <p className={s.notice} role="alert">{logoError}</p>}
           {logo && (
             <div className={s.logoResult}>
               <img src={logo.dataUrl} alt="" className={s.foundLogo} />
