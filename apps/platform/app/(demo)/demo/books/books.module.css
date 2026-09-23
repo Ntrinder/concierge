@@ -7,6 +7,10 @@
   min-height: 100vh; background: var(--bg); color: var(--ink);
   font-family: "EB Garamond", Georgia, serif; font-size: 19px; line-height: 1.55;
 }
+/* The Concierge loader appends <concierge-agent> to <body>, outside .store, and the
+   widget inherits font-family through its shadow root — so the store's base type and
+   colours must live on body itself, like on a real storefront. */
+:global(body):has(.store) { margin: 0; background: #F6F1E7; color: #2B2522; font-family: "EB Garamond", Georgia, serif; }
 .header { display: flex; align-items: center; gap: 32px; padding: 20px clamp(16px, 5vw, 64px); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-family: "Fraunces", serif; font-size: 26px; font-style: italic; }
 .nav { display: flex; gap: 24px; flex: 1; }

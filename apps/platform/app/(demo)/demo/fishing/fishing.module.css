@@ -7,6 +7,10 @@
   min-height: 100vh; background: var(--bg); color: var(--ink);
   font-family: "Barlow", system-ui, sans-serif; font-size: 16px; line-height: 1.45;
 }
+/* The Concierge loader appends <concierge-agent> to <body>, outside .store, and the
+   widget inherits font-family through its shadow root — so the store's base type and
+   colours must live on body itself, like on a real storefront. */
+:global(body):has(.store) { margin: 0; background: #101214; color: #F2F2F0; font-family: "Barlow", system-ui, sans-serif; }
 .ticker { background: var(--brand); color: #101214; font: 700 12px/1 "Barlow Condensed", sans-serif; letter-spacing: .12em; padding: 8px 16px; text-align: center; }
 .header { display: flex; align-items: center; gap: 32px; padding: 16px clamp(16px, 4vw, 48px); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font: 700 24px/1 "Barlow Condensed", sans-serif; letter-spacing: .06em; }
