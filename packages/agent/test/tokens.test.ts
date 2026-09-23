@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { differenceEuclidean } from "culori";
-import { contrast, deriveTokens } from "../src/tokens";
+import { contrast, deriveTokens, isPastelBrand } from "../src/tokens";
 import { DEMO_CONFIGS, LAB_CONFIGS, PRESETS } from "../src/presets";
 import type { AgentConfig } from "../src/types";
 
@@ -106,6 +106,43 @@ describe("deriveTokens", () => {
       const { vars } = deriveTokens(config);
       expect(contrast(vars["--c-success"], vars["--c-surface"]), `${config.id || "preset"} vs surface`).toBeGreaterThanOrEqual(3);
       expect(contrast(vars["--c-success"], vars["--c-bg"]), `${config.id || "preset"} vs bg`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("flags only pastel brands as pastel", () => {
+    const configs = [...LAB_CONFIGS, ...Object.values(PRESETS).map((p) => ({ ...base, ...p.config }))];
+    for (const config of configs) {
+      expect(isPastelBrand(config), config.id || "preset").toBe(config.id === "lab-sherbet");
+    }
+  });
+
+  it("gives Sherbet a deep-shade action colour and keeps the brand as a surface tint", () => {
+    const sherbet = LAB_CONFIGS.find((c) => c.id === "lab-sherbet")!;
+    const { vars, adjustments } = deriveTokens(sherbet);
+    expect(vars["--c-action"]).not.toBe(vars["--c-brand"]);
+    expect(contrast(vars["--c-on-action"], vars["--c-action"])).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(vars["--c-action"], vars["--c-bg"])).toBeGreaterThanOrEqual(4.5);
+    expect(vars["--c-brand-soft"]).toBe(vars["--c-brand"]);
+    expect(contrast(vars["--c-on-brand-soft"], vars["--c-brand-soft"])).toBeGreaterThanOrEqual(4.5);
+    expect(adjustments.map((a) => a.token)).toContain("--c-action");
+  });
+
+  it("leaves --c-action equal to --c-brand for every non-pastel Lab config and preset", () => {
+    const configs = [...LAB_CONFIGS, ...Object.values(PRESETS).map((p) => ({ ...base, ...p.config }))];
+    for (const config of configs) {
+      if (isPastelBrand(config)) continue;
+      const { vars } = deriveTokens(config);
+      expect(vars["--c-action"], config.id || "preset").toBe(vars["--c-brand"]);
+      expect(vars["--c-on-action"], config.id || "preset").toBe(vars["--c-on-brand"]);
+    }
+  });
+
+  it("keeps --c-action readable and --c-action-edge visible against --c-bg for every Lab config and preset", () => {
+    const configs = [...LAB_CONFIGS, ...Object.values(PRESETS).map((p) => ({ ...base, ...p.config }))];
+    for (const config of configs) {
+      const { vars } = deriveTokens(config);
+      expect(contrast(vars["--c-on-action"], vars["--c-action"]), config.id || "preset").toBeGreaterThanOrEqual(4.5);
+      expect(contrast(vars["--c-action-edge"], vars["--c-bg"]), config.id || "preset").toBeGreaterThanOrEqual(3);
     }
   });
 

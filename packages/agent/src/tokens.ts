@@ -17,6 +17,13 @@ export function hex({ l, c, h }: Lch): string {
 
 export const contrast = (a: string, b: string): number => wcagContrast(a, b);
 
+/** Light, low-chroma brand colours (e.g. sherbet pink) read as disabled when used as a fill — treat
+ * them as a surface tint instead and derive a deep-shade "action" colour for buttons/links. */
+export function isPastelBrand(config: { brand: string }): boolean {
+  const b = lch(config.brand);
+  return b.l > 0.75 && b.c < 0.12;
+}
+
 /** Move fg's lightness (keeping hue) away from bg until it reaches `min` contrast. */
 export function ensureContrast(fg: string, bg: string, min: number): string {
   if (contrast(fg, bg) >= min) return formatHex(parse(fg)!);
@@ -159,8 +166,29 @@ export function deriveTokens(config: AgentConfig): TokenResult {
     adjustments.push({ token: "--c-link", from: brand, to: link, reason: `Your brand colour is too ${isDark ? "dark" : "light"} to read as text here, so links and highlights use a ${isDark ? "brighter" : "deeper"} shade of it.` });
   }
 
-  const brandSoft = hex({ l: isDark ? bg.l + 0.09 : Math.max(0.9, Math.min(0.95, bg.l - 0.04)), c: Math.min(b.c, 0.05), h: b.h });
-  const onBrandSoft = ensureContrast(hex({ l: isDark ? 0.88 : 0.34, c: b.c, h: b.h }), brandSoft, 4.5);
+  let brandSoft = hex({ l: isDark ? bg.l + 0.09 : Math.max(0.9, Math.min(0.95, bg.l - 0.04)), c: Math.min(b.c, 0.05), h: b.h });
+  const onBrandSoftSeed = hex({ l: isDark ? 0.88 : 0.34, c: b.c, h: b.h });
+  let onBrandSoft = ensureContrast(onBrandSoftSeed, brandSoft, 4.5);
+
+  // Pastel brands (light, low-chroma, e.g. sherbet pink) read as disabled when used as a
+  // button fill. Use the brand as a surface tint instead (brandSoft becomes the brand
+  // itself) and derive a deep-shade "action" colour for buttons/links/send. Only on light
+  // backgrounds — on dark a light brand is already a strong fill.
+  const pastel = !isDark && isPastelBrand(config);
+  let action = brand, onAction = onBrand, actionEdge = brandEdge, actionHover = brandHover, actionPressed = brandPressed;
+  if (pastel) {
+    const inkSeed = hex({ l: 0.34, c: Math.min(b.c * 1.6, 0.09), h: b.h });
+    const ink = ensureContrastAll(inkSeed, [bgHex, surface], 4.5);
+    const inkLch = lch(ink);
+    action = ink;
+    onAction = bestOn(ink);
+    actionEdge = ink;
+    actionHover = hex({ ...inkLch, l: inkLch.l - 0.05 });
+    actionPressed = hex({ ...inkLch, l: inkLch.l - 0.1 });
+    adjustments.push({ token: "--c-action", from: brand, to: ink, reason: "Your colour is light, so we use it for backgrounds and a deep shade of it for buttons." });
+    brandSoft = brand;
+    onBrandSoft = ensureContrast(onBrandSoftSeed, brandSoft, 4.5);
+  }
 
   const accent = config.accent ? formatHex(parse(config.accent)!) : hex({ ...b, h: (b.h + 40) % 360 });
   const onAccent = bestOn(accent);
@@ -190,6 +218,11 @@ export function deriveTokens(config: AgentConfig): TokenResult {
     "--c-link": link,
     "--c-brand-soft": brandSoft,
     "--c-on-brand-soft": onBrandSoft,
+    "--c-action": action,
+    "--c-on-action": onAction,
+    "--c-action-edge": actionEdge,
+    "--c-action-hover": actionHover,
+    "--c-action-pressed": actionPressed,
     "--c-accent": accent,
     "--c-on-accent": onAccent,
     "--c-flag-bg": flagBg,

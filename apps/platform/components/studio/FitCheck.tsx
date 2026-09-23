@@ -4,7 +4,7 @@ import { deriveTokens } from "@concierge/agent/core";
 import type { Action, StudioState } from "./state";
 import s from "./studio.module.css";
 
-const HIGHLIGHT: Record<string, string> = { "--c-link": "link", "--c-brand-edge": "btn", "--c-on-brand": "btn" };
+const HIGHLIGHT: Record<string, string> = { "--c-link": "link", "--c-brand-edge": "btn", "--c-on-brand": "btn", "--c-action": "btn" };
 
 export function FitCheck({ state, dispatch }: { state: StudioState; dispatch: Dispatch<Action> }) {
   const { adjustments } = useMemo(() => deriveTokens(state.config), [state.config]);
