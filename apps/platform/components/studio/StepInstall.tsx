@@ -12,8 +12,21 @@ const STEPS: Record<Exclude<Tab, "dev">, string[]> = {
   wordpress: ["Install a code-snippets plugin such as WPCode.", "Add Snippet → HTML snippet, and paste the code.", "Set location to “Site Wide Footer”, then activate."],
 };
 
+const DEMOS = [
+  { store: "books", shop: "bookshop", products: "sample books" },
+  { store: "fishing", shop: "outdoor shop", products: "sample fishing gear" },
+] as const;
+
+/** The demo that matches the products the assistant was tuned with comes first. */
+function demoLinks(current: StudioState["config"]["store"]) {
+  return [...DEMOS].sort((a, b) => Number(b.store === current) - Number(a.store === current)).map((d) => ({
+    store: d.store,
+    label: d.store === current ? `See it on the ${d.shop} demo (with your ${d.products})` : `Or try it on the ${d.shop} demo (with ${d.products})`,
+  }));
+}
+
 export function StepInstall({ state, dispatch }: { state: StudioState; dispatch: Dispatch<Action> }) {
-  const [status, setStatus] = useState<"saving" | "saved" | "error">("saving");
+  const [status, setStatus] = useState<"saving" | "saved" | "error" | "forbidden">("saving");
   const [error, setError] = useState("");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "fallback">("idle");
   const [tab, setTab] = useState<Tab>("any");
@@ -23,30 +36,35 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
   const cancelledRef = useRef(false);
   const codeRef = useRef<HTMLElement>(null);
 
+  // Saves the design: the first save mints an id + edit token; later saves send
+  // the token back so they update the same id (and so the live snippet).
+  function save(asNew = false) {
+    setStatus("saving");
+    const headers: Record<string, string> = { "content-type": "application/json" };
+    if (!asNew && state.editToken) headers["x-edit-token"] = state.editToken;
+    if (asNew) dispatch({ type: "save-as-new" });
+    fetch("/api/configs", { method: "POST", headers, body: JSON.stringify({ ...state.config, id: asNew ? "" : state.savedId ?? "" }) })
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({ error: "Couldn't save — try again." }));
+        if (cancelledRef.current) return;
+        if (r.status === 403) { setError(data.error); setStatus("forbidden"); return; }
+        if (!r.ok) { setError(data.error); setStatus("error"); return; }
+        dispatch({ type: "saved", id: data.id, editToken: data.editToken });
+        setStatus("saved");
+      })
+      .catch(() => { if (!cancelledRef.current) { setError("Couldn't save — check your connection and try again."); setStatus("error"); } });
+  }
+
   useEffect(() => {
     setOrigin(window.location.origin);
     // React 19 StrictMode (dev) invokes this effect twice on mount, running
-    // the cleanup in between. A `startedRef` guard ensures the POST itself
-    // only ever fires once per mount, so we never mint two saved configs
-    // for one visit to this step. `cancelledRef` (rather than a plain local
-    // `cancelled` var) is reset to false at the top of every effect run, so
-    // if the component is genuinely still mounted when the in-flight
-    // request resolves (i.e. the StrictMode remount happened), the result
-    // is still applied; it only stays true — suppressing the dispatch — if
-    // the component actually unmounted (e.g. navigating back to step 2)
-    // without a subsequent effect run to reset it.
+    // the cleanup in between. `startedRef` makes the POST fire once per mount,
+    // so one visit never mints two saved configs; `cancelledRef` is reset on
+    // every run, so it only suppresses the result if the step truly unmounted.
     cancelledRef.current = false;
     if (!startedRef.current) {
       startedRef.current = true;
-      fetch("/api/configs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...state.config, id: state.savedId ?? "" }) })
-        .then(async (r) => {
-          const data = await r.json();
-          if (cancelledRef.current) return;
-          if (!r.ok) { setError(data.error); setStatus("error"); return; }
-          dispatch({ type: "saved", id: data.id });
-          setStatus("saved");
-        })
-        .catch(() => { if (!cancelledRef.current) { setError("Couldn't save — check your connection and try again."); setStatus("error"); } });
+      save();
     }
     return () => { cancelledRef.current = true; };
     // Save once per visit to this step
@@ -89,10 +107,13 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
   return (
     <main className={s.install}>
       <h1 className={s.h1}>Add it to your site</h1>
-      <p className={s.lede}>One line of code. Any changes you make in Concierge later update your site automatically — no need to paste it again.</p>
+      <p className={s.lede}>One line of code. Come back to this studio in the same browser and any changes you save update your site automatically — no need to paste it again.</p>
 
       {status === "saving" && <p className={s.muted} aria-live="polite">Saving your design…</p>}
       {status === "error" && <p className={s.notice} role="alert">{error} <button type="button" className={s.linkBtn} onClick={() => dispatch({ type: "step", step: 2 })}>Back to editing</button></p>}
+      {status === "forbidden" && (
+        <p className={s.notice} role="alert">{error} <button type="button" className={s.linkBtn} onClick={() => save(true)}>Save as a new design</button></p>
+      )}
 
       {status === "saved" && id && (
         <>
@@ -123,11 +144,14 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
 
           <div className={s.tryLive}>
             <h2 className={s.h3}>See it on a real page first</h2>
-            <p className={s.muted}>Your design, embedded with this exact snippet on our demo stores:</p>
-            <p>
-              <a className={s.linkBtn} href={`/demo/books?config=${id}`} target="_blank" rel="noreferrer">Bookshop demo ↗</a>{"  ·  "}
-              <a className={s.linkBtn} href={`/demo/fishing?config=${id}`} target="_blank" rel="noreferrer">Outdoor demo ↗</a>
-            </p>
+            <p className={s.muted}>Your design, embedded with this exact snippet on one of our demo stores. The assistant shows that store's sample products, not yours.</p>
+            <ul className={s.demoLinks}>
+              {demoLinks(state.config.store).map((d) => (
+                <li key={d.store}>
+                  <a className={s.linkBtn} href={`/demo/${d.store}?config=${id}`} target="_blank" rel="noreferrer">{d.label} ↗</a>
+                </li>
+              ))}
+            </ul>
           </div>
           <button type="button" className={s.secondary} onClick={() => dispatch({ type: "step", step: 2 })}>← Keep editing the design</button>
         </>

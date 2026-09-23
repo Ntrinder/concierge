@@ -11,6 +11,8 @@
 .toplink { color: var(--ink-2); font-size: 14px; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+.resume { max-width: 840px; margin: 24px auto 0; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.resume p { margin: 0; flex: 1 1 280px; }
 .start { max-width: 880px; margin: 0 auto; padding: 64px 20px 96px; }
 .h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; letter-spacing: -.025em; margin: 0 0 16px; font-weight: 600; }
 .h2 { font-size: 22px; letter-spacing: -.01em; margin: 0 0 16px; font-weight: 600; }
@@ -65,7 +67,8 @@
 .stageWrap { flex: 1; min-height: 0; display: grid; place-items: center; overflow: auto; border-radius: 16px; background: repeating-linear-gradient(45deg, #f1f0eb 0 10px, #eeede7 10px 20px); }
 .stageDesktop, .stagePhone { position: relative; overflow: hidden; box-shadow: 0 20px 60px -20px rgb(0 0 0 / .25); }
 .stageDesktop { width: 100%; height: 100%; min-height: 560px; }
-.stagePhone { width: 375px; height: 740px; border-radius: 36px; border: 10px solid #111; }
+/* content-box so the screen itself is a true 375px wide inside the 10px bezel */
+.stagePhone { box-sizing: content-box; width: 375px; height: 740px; border-radius: 36px; border: 10px solid #111; }
 .agentLayer { position: absolute; inset: 0; }
 .agentLayer > * { width: 100%; height: 100%; }
 .previewNote { margin: 0; font-size: 13px; color: var(--ink-3); }
@@ -137,6 +140,7 @@
 }
 .install { max-width: 760px; margin: 0 auto; padding: 64px 20px 96px; display: grid; gap: 20px; }
 .install .h1, .install .lede { margin-bottom: 0; }
+.demoLinks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
 .snippet { display: flex; gap: 12px; align-items: center; padding: 16px; background: #16161a; color: #f4f4ef; border-radius: 14px; }
 .snippet code { flex: 1; min-width: 0; font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
 .snippet .primary { background: #f4f4ef; color: #16161a; flex: none; }
