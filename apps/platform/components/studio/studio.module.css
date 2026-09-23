@@ -1,0 +1,58 @@
+.app { min-height: 100vh; }
+.topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px; padding: 14px clamp(16px, 3vw, 32px); background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; }
+.logoMark { width: 18px; height: 18px; border-radius: 50% 50% 50% 4px; background: var(--ink); }
+.steps { display: flex; gap: 4px; list-style: none; margin: 0 auto; padding: 0; }
+.steps button { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; color: var(--ink-3); cursor: pointer; font-size: 14px; }
+.steps button:disabled { cursor: default; }
+.stepActive button { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.stepDone button { color: var(--ink-2); }
+.stepNum { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid currentColor; font-size: 11px; }
+.toplink { color: var(--ink-2); font-size: 14px; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.start { max-width: 880px; margin: 0 auto; padding: 64px 20px 96px; }
+.h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; letter-spacing: -.025em; margin: 0 0 16px; font-weight: 600; }
+.h2 { font-size: 22px; letter-spacing: -.01em; margin: 0 0 16px; font-weight: 600; }
+.h3 { font-size: 14px; margin: 16px 0 8px; font-weight: 600; }
+.lede { font-size: 18px; color: var(--ink-2); max-width: 36em; margin: 0 0 32px; }
+.muted { color: var(--ink-3); font-weight: 400; margin: 0; font-size: 14px; }
+.urlForm { display: flex; gap: 8px; }
+.urlInput { flex: 1; min-width: 0; height: 56px; padding: 0 20px; font-size: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.urlInput:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.primary { height: 48px; padding: 0 22px; border: 0; border-radius: 12px; background: var(--ink); color: var(--paper); font-weight: 600; cursor: pointer; }
+.urlForm .primary { height: 56px; }
+.primary:disabled { opacity: .6; }
+.hint { color: var(--ink-3); font-size: 14px; margin: 12px 0 0; }
+.linkBtn { border: 0; background: none; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.progress { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 6px; font-size: 15px; }
+.progress .done { color: var(--ok); }
+.progress .active { color: var(--ink); }
+.progress .pending { color: var(--ink-3); }
+.notice { margin: 24px 0; padding: 14px 16px; border-radius: 10px; background: var(--note-soft); color: var(--note); }
+.found { margin: 32px 0; padding: 24px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.foundGrid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; margin-bottom: 24px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatchBtn { display: grid; grid-template-columns: 36px auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left; padding: 8px 12px 8px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer; }
+.swatchBtn[aria-checked="true"] { outline: 2px solid var(--ink); outline-offset: 0; border-color: transparent; }
+.swatch { grid-row: span 2; width: 36px; height: 36px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
+.swatchHex { font: 600 13px/1.2 ui-monospace, monospace; }
+.swatchWhy { font-size: 12px; color: var(--ink-3); }
+.foundValue { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.miniSwatch { display: inline-block; width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+.foundLogo { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; border: 1px solid var(--line); background: var(--card); }
+.alternatives { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+.altCard { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); display: grid; gap: 8px; align-content: start; }
+.fileLabel { display: inline-flex; width: fit-content; align-items: center; height: 40px; padding: 0 16px; border: 1px dashed var(--ink-3); border-radius: 10px; cursor: pointer; font-size: 14px; }
+.fileLabel input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.logoResult { display: grid; gap: 12px; margin-top: 8px; }
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.preset { display: grid; gap: 4px; text-align: left; padding: 12px; border: 1px solid var(--line); cursor: pointer; font-size: 13px; }
+.preset strong { font-size: 15px; }
+.presetDot { width: 18px; height: 18px; border-radius: 50%; }
+@media (max-width: 720px) {
+  .steps button { font-size: 0; gap: 0; padding: 6px; }
+  .stepNum { font-size: 11px; }
+  .foundGrid, .alternatives { grid-template-columns: 1fr; }
+  .urlForm { flex-direction: column; }
+}
