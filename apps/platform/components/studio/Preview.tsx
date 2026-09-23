@@ -25,7 +25,6 @@ export function Preview({ state, dispatch }: { state: StudioState; dispatch: Dis
         <Segmented label="Device" value={preview.device} options={[["desktop", "Desktop"], ["mobile", "Phone"]]} onChange={(device) => setPreview({ device })} />
         <Segmented label="Assistant" value={preview.open ? "open" : "closed"} options={[["open", "Open"], ["closed", "Closed"]]} onChange={(v) => setPreview({ open: v === "open" })} />
         <Segmented label="Page" value={preview.host} options={[["light", "Light page"], ["dark", "Dark page"]]} onChange={(host) => setPreview({ host })} />
-        <Segmented label="Sample products" value={config.store} options={[["books", "Books"], ["fishing", "Outdoor gear"]]} onChange={(store) => dispatch({ type: "patch", patch: { store } })} />
       </div>
       {site.fontUrl && <link rel="stylesheet" href={site.fontUrl} />}
       <div className={s.stageWrap}>

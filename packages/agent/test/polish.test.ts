@@ -118,6 +118,12 @@ describe("config normalize — subtitle, heading, topOffset", () => {
     expect(c.heading?.case).toBeUndefined();
   });
 
+  it("keeps a known launcher style and drops an unknown one", () => {
+    expect(normalize({ ...base, launcher: { position: "bottom-left", style: "icon" } })!.launcher).toEqual({ position: "bottom-left", style: "icon" });
+    expect(normalize({ ...base, launcher: { position: "bottom-right", style: "blob" } })!.launcher).toEqual({ position: "bottom-right" });
+    expect(normalize(base)!.launcher).toEqual({ position: "bottom-right" });
+  });
+
   it("still rejects a config missing the essentials", () => {
     expect(normalize({ agent: { name: "Test" } })).toBeNull();
   });

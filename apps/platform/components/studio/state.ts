@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, PRESETS, googleFontUrl, type AgentConfig, type PresetKey } from "@concierge/agent/core";
+import { DEFAULT_CONFIG, PRESETS, googleFontUrl, type AgentConfig, type PresetKey, type StoreKey, type Voice } from "@concierge/agent/core";
 import type { Extraction } from "@/lib/extract";
 import { shapeFromRadius } from "@/lib/fonts";
 
@@ -55,19 +55,38 @@ export function studioReducer(s: StudioState, a: Action): StudioState {
     case "start":
       // A fresh start is a new design: never reuse the previous one's saved id/token
       return { ...s, step: 2, config: a.config, source: a.source, extraction: a.extraction, candidates: a.candidates, site: a.site, savedId: undefined, editToken: undefined,
-        preview: { ...s.preview, host: a.config.surface === "dark" ? "dark" : "light" } };
+        preview: { ...s.preview, host: pageTone(a.site, a.config) } };
     case "patch": return { ...s, config: { ...s.config, ...a.patch } };
     case "step": return { ...s, step: a.step };
     case "preview": return { ...s, preview: { ...s.preview, ...a.patch } };
     case "highlight": return { ...s, highlight: a.token };
     case "saved": return { ...s, savedId: a.id, editToken: a.editToken ?? s.editToken, config: { ...s.config, id: a.id } };
     case "save-as-new": return { ...s, savedId: undefined, editToken: undefined, config: { ...s.config, id: "" } };
-    case "restore": return { ...s, ...a.saved, step: 2, preview: { ...s.preview, host: a.saved.config.surface === "dark" ? "dark" : "light" } };
+    case "restore": return { ...s, ...a.saved, step: 2, preview: { ...s.preview, host: pageTone(a.saved.site, a.saved.config) } };
   }
 }
 
-function greetingFor(name: string) {
-  return `Hi! Welcome to ${name.replace(/\.+$/, "")}. Tell me what you're looking for and I'll help you find the right thing.`;
+/** The preview page's tone: their site's own background when we read one, else the assistant's surface. */
+function pageTone(site: SiteInfo | undefined, config: AgentConfig): "light" | "dark" {
+  if (site?.background) return isDarkHex(site.background) ? "dark" : "light";
+  return config.surface === "dark" ? "dark" : "light";
+}
+
+/** The default greeting for each tone; Controls swaps between these until the merchant writes their own. */
+export function greetingFor(name: string, voice: Voice): string {
+  const n = name.replace(/\.+$/, "");
+  switch (voice) {
+    case "warm": return `Hi! Welcome to ${n}. Tell me what you're looking for and I'll help you find the right thing.`;
+    case "neutral": return `Welcome to ${n}. What are you looking for today?`;
+    case "terse": return "What do you need?";
+  }
+}
+
+const OUTDOOR_RE = /fish|fly\b|rod|reel|angl|outdoor|hik|camp|trail|gear/i;
+
+/** Which sample catalogue the preview converses about: outdoor gear if their site reads that way, else books. */
+export function sampleStoreFor(site: SiteInfo): StoreKey {
+  return OUTDOOR_RE.test([site.name, ...(site.nav ?? []), site.headline, site.eyebrow].filter(Boolean).join(" ")) ? "fishing" : "books";
 }
 
 /**
@@ -95,13 +114,14 @@ export function configFromExtraction(ex: Extraction): AgentConfig {
   const display = ex.headingFont ?? ex.fonts[0];
   return {
     ...DEFAULT_CONFIG,
+    store: sampleStoreFor({ name, nav: ex.nav, headline: ex.headline, eyebrow: ex.eyebrow }),
     brand,
     background: bg,
     surface: bg && isDarkHex(bg) ? "dark" : "light",
     font: { family: "inherit", ...(display ? { display, url: ex.fontUrl ?? googleFontUrl([display]) } : {}) },
     shape: shapeFromRadius(ex.radius),
     heading: { case: ex.headingCase ?? "none", tracking: ex.headingTracking ?? 0 },
-    agent: { name: `${name} assistant`, avatar: avatarFromUrl(ex.logo), greeting: greetingFor(name) },
+    agent: { name: `${name} assistant`, avatar: avatarFromUrl(ex.logo), greeting: greetingFor(name, DEFAULT_CONFIG.voice) },
     launcher: { position: "bottom-right", label: "Need a hand?" },
   };
 }
@@ -110,7 +130,8 @@ export function configFromPalette(colours: string[], dataUrl: string, name: stri
   return {
     ...DEFAULT_CONFIG,
     brand: colours[0] ?? "#111111",
-    agent: { name: `${name} assistant`, avatar: dataUrl, greeting: greetingFor(name) },
+    store: "books",
+    agent: { name: `${name} assistant`, avatar: dataUrl, greeting: greetingFor(name, DEFAULT_CONFIG.voice) },
   };
 }
 

@@ -27,7 +27,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 .launcher:hover { background: var(--c-brand-hover); transform: translateY(-1px); }
 .launcher-label { text-transform: var(--heading-case); letter-spacing: var(--heading-tracking); }
-.launcher.is-open { padding: 6px; }
+.launcher.is-open, .launcher.is-icon { padding: 6px; }
 .left .launcher, .left .panel { right: auto; left: calc(20px + env(safe-area-inset-left, 0px)); }
 .inline .launcher, .inline .panel { position: absolute; }
 .inline .launcher { right: 20px; bottom: 20px; }

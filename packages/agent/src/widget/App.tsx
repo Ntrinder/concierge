@@ -86,6 +86,8 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
 
   const say = (text: string) => setConv((s) => send(s, text));
   const busy = visible < conv.messages.length;
+  const launcherLabel = config.launcher.label ?? config.agent.name;
+  const iconOnly = config.launcher.style === "icon";
   const placeholder = conv.messages.length === 0 ? "Tell me what you're looking for…" : "Reply or ask something else…";
 
   const addToBasket = (product: ReturnType<typeof getProduct>, { giftWrap }: { giftWrap: boolean }) => {
@@ -103,9 +105,9 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
       <style>{varsToCss(vars)}</style>
       <div class={cls("root", inline ? "inline" : "page", compact && "compact", config.launcher.position === "bottom-left" && "left", highlight && `hl-${highlight}`)}>
         {!(open && compact) && (
-          <button ref={launcherRef} type="button" class={cls("launcher t-btn", open && "is-open")} aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}
-            aria-label={open ? "Close assistant" : config.launcher.label ?? config.agent.name}>
-            {open ? <span class="avatar"><CloseIcon /></span> : <><Avatar config={config} /><span class="launcher-label">{config.launcher.label ?? config.agent.name}</span></>}
+          <button ref={launcherRef} type="button" class={cls("launcher t-btn", open && "is-open", iconOnly && "is-icon")} aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}
+            aria-label={open ? "Close assistant" : launcherLabel}>
+            {open ? <span class="avatar"><CloseIcon /></span> : <><Avatar config={config} />{!iconOnly && <span class="launcher-label">{launcherLabel}</span>}</>}
           </button>
         )}
         {open && (

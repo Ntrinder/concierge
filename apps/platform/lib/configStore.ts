@@ -18,6 +18,7 @@ const ENUMS = {
   voice: ["warm", "neutral", "terse"],
   cardStyle: ["visual", "spec"],
   position: ["bottom-right", "bottom-left"],
+  launcherStyle: ["pill", "icon"],
 } as const;
 
 const configPath = (id: string) => path.join(DATA_DIR, `${id}.json`);
@@ -93,6 +94,7 @@ export function validate(c: Partial<AgentConfig>): string | null {
   const launcher = c.launcher as unknown as Record<string, unknown> | undefined;
   if (!launcher || typeof launcher !== "object" || !oneOf(launcher.position, ENUMS.position)) return "Launcher position must be bottom-right or bottom-left";
   if (launcher.label !== undefined && !isStr(launcher.label, 80)) return "Launcher label must be under 80 characters";
+  if (launcher.style !== undefined && !oneOf(launcher.style, ENUMS.launcherStyle)) return "Launcher style must be pill or icon";
 
   if (c.basket !== undefined) {
     if (typeof c.basket !== "object" || Array.isArray(c.basket)) return "Basket links are invalid";
@@ -119,7 +121,7 @@ function clean(c: AgentConfig, id: string): AgentConfig {
     voice: c.voice,
     cardStyle: c.cardStyle,
     agent: { name: c.agent.name, greeting: c.agent.greeting, ...(c.agent.avatar ? { avatar: c.agent.avatar } : {}), ...(c.agent.subtitle ? { subtitle: c.agent.subtitle } : {}) },
-    launcher: { position: c.launcher.position, ...(c.launcher.label ? { label: c.launcher.label } : {}) },
+    launcher: { position: c.launcher.position, ...(c.launcher.label ? { label: c.launcher.label } : {}), ...(c.launcher.style ? { style: c.launcher.style } : {}) },
     ...(c.basket ? { basket: { ...(c.basket.checkoutUrl ? { checkoutUrl: c.basket.checkoutUrl } : {}), ...(c.basket.basketUrl ? { basketUrl: c.basket.basketUrl } : {}) } } : {}),
     ...(c.heading ? { heading: { ...(c.heading.case ? { case: c.heading.case } : {}), ...(c.heading.tracking !== undefined ? { tracking: c.heading.tracking } : {}) } } : {}),
     ...(c.topOffset !== undefined ? { topOffset: c.topOffset } : {}),

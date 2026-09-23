@@ -33,6 +33,9 @@ export function normalize(raw: unknown): AgentConfig | null {
     ...(h?.case === "uppercase" || h?.case === "none" ? { case: h?.case } : {}),
     ...(typeof h?.tracking === "number" ? { tracking: Math.min(0.2, Math.max(0, h!.tracking as number)) } : {}),
   };
+  const l = c.launcher && typeof c.launcher === "object" ? c.launcher : null;
+  const { style: launcherStyle, ...launcherRest } = l ?? { position: "bottom-right" as const };
+  const launcher = { ...launcherRest, ...(launcherStyle === "pill" || launcherStyle === "icon" ? { style: launcherStyle } : {}) };
   const topOffset = typeof c.topOffset === "number" ? Math.min(200, Math.max(0, c.topOffset)) : undefined;
 
   return {
@@ -44,7 +47,7 @@ export function normalize(raw: unknown): AgentConfig | null {
     voice: c.voice ?? "neutral",
     cardStyle: c.cardStyle ?? "visual",
     agent: { ...c.agent, greeting: c.agent.greeting ?? "", subtitle },
-    launcher: c.launcher && typeof c.launcher === "object" ? c.launcher : { position: "bottom-right" },
+    launcher,
     ...(Object.keys(basket).length ? { basket } : {}),
     ...(c.heading !== undefined ? { heading } : {}),
     ...(c.topOffset !== undefined ? { topOffset } : {}),

@@ -18,7 +18,8 @@ export interface AgentConfig {
   voice: Voice;
   cardStyle: CardStyle;
   agent: { name: string; avatar?: string; greeting: string; subtitle?: string };
-  launcher: { position: "bottom-right" | "bottom-left"; label?: string };
+  /** style "icon" = avatar-only round launcher; default "pill" (avatar + label) */
+  launcher: { position: "bottom-right" | "bottom-left"; label?: string; style?: "pill" | "icon" };
   basket?: { checkoutUrl?: string; basketUrl?: string };
   heading?: { case?: "none" | "uppercase"; tracking?: number };
   topOffset?: number;

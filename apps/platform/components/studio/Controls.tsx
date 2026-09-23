@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type Dispatch, type ReactNode } from "reac
 import { googleFontUrl, type AgentConfig, type CardStyle, type Density, type Shape, type Voice } from "@concierge/agent/core";
 import { FONT_CHOICES } from "@/lib/fonts";
 import { normalizeHex } from "./hex";
-import { isDarkHex, type Action, type StudioState } from "./state";
+import { avatarFromUrl, greetingFor, isDarkHex, type Action, type StudioState } from "./state";
 import s from "./studio.module.css";
 
 const VOICES: [Voice, string, string][] = [
@@ -105,11 +105,13 @@ function FontUrlField({ value, onCommit }: { value: string | undefined; onCommit
   );
 }
 
-function Thumbs<T extends string>({ label, value, options, onChange, render }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void; render: (v: T) => ReactNode }) {
+function Thumbs<T extends string>({ label, value, options, onChange, onFocus, render }: {
+  label: string; value: T; options: [T, string][]; onChange: (v: T) => void; onFocus?: () => void; render: (v: T) => ReactNode;
+}) {
   return (
     <div className={s.thumbs} role="radiogroup" aria-label={label}>
       {options.map(([v, text]) => (
-        <button key={v} type="button" role="radio" aria-checked={value === v} className={s.thumb} onClick={() => onChange(v)}>
+        <button key={v} type="button" role="radio" aria-checked={value === v} className={s.thumb} onClick={() => onChange(v)} onFocus={onFocus}>
           <span className={s.thumbArt} aria-hidden="true">{render(v)}</span>{text}
         </button>
       ))}
@@ -125,6 +127,23 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
     patch({ font: { family, ...(display ? { display } : {}), ...(families.length ? { url: googleFontUrl(families) } : {}) } });
   };
   const candidates = state.candidates.length ? state.candidates : [{ hex: c.brand, reason: "current" }];
+
+  // The found logo is stored as avatarFromUrl(site.logo) (root-relative for our own demo assets), an uploaded one as its data URL
+  const siteLogo = state.site.logo;
+  const logoAvatar = avatarFromUrl(siteLogo) ?? (siteLogo?.startsWith("data:") ? siteLogo : undefined);
+  const usingLogo = !!c.agent.avatar && (c.agent.avatar === logoAvatar || c.agent.avatar === siteLogo);
+  const usingUpload = !!c.agent.avatar && !usingLogo;
+
+  const setVoice = (voice: Voice) => {
+    // Keep the greeting in step with the tone until the merchant writes their own
+    const name = state.site.name;
+    const isDefault = VOICES.some(([v]) => c.agent.greeting === greetingFor(name, v));
+    patch({ voice, ...(isDefault ? { agent: { ...c.agent, greeting: greetingFor(name, voice) } } : {}) });
+  };
+
+  // Launcher controls switch the preview to Closed, so the merchant sees the launcher they're editing
+  const showLauncher = () => { if (state.preview.open) dispatch({ type: "preview", patch: { open: false } }); };
+  const patchLauncher = (p: Partial<AgentConfig["launcher"]>) => { showLauncher(); patch({ launcher: { ...c.launcher, ...p } }); };
 
   return (
     <div className={s.controls}>
@@ -151,7 +170,7 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
           {[...new Set([state.site.font, ...FONT_CHOICES].filter(Boolean) as string[])].map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
 
-        <label className={s.label}>Page</label>
+        <label className={s.label}>Assistant background</label>
         <Thumbs<"light" | "dark"> label="Surface" value={c.surface} options={[["light", "Light"], ["dark", "Dark"]]}
           onChange={(surface) => {
             // Switching surface drops a background that belonged to the other surface; switching back restores the extracted one
@@ -173,21 +192,39 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
       <Group title="Personality">
         <label className={s.label} htmlFor="name">Assistant name</label>
         <input id="name" className={s.input} value={c.agent.name} onChange={(e) => patch({ agent: { ...c.agent, name: e.target.value } })} />
+        <label className={s.label} htmlFor="subtitle">Subtitle (optional)</label>
+        <input id="subtitle" className={s.input} value={c.agent.subtitle ?? ""} placeholder="e.g. Replies instantly"
+          onChange={(e) => patch({ agent: { ...c.agent, subtitle: e.target.value || undefined } })} />
         <label className={s.label} htmlFor="greeting">Greeting</label>
         <textarea id="greeting" className={s.textarea} rows={3} value={c.agent.greeting} onChange={(e) => patch({ agent: { ...c.agent, greeting: e.target.value } })} />
         <label className={s.label}>Avatar</label>
         <div className={s.inlineRadios}>
-          {state.site.logo && <label><input type="radio" checked={c.agent.avatar === state.site.logo} onChange={() => patch({ agent: { ...c.agent, avatar: state.site.logo } })} /> Your logo</label>}
-          <label><input type="radio" checked={!c.agent.avatar} onChange={() => patch({ agent: { ...c.agent, avatar: undefined } })} /> Initials</label>
+          {logoAvatar && <label><input type="radio" name="avatar" checked={usingLogo} onChange={() => patch({ agent: { ...c.agent, avatar: logoAvatar } })} /> Your logo</label>}
+          {usingUpload && <label><input type="radio" name="avatar" checked readOnly /> Uploaded logo</label>}
+          <label><input type="radio" name="avatar" checked={!c.agent.avatar} onChange={() => patch({ agent: { ...c.agent, avatar: undefined } })} /> Initials</label>
         </div>
         <label className={s.label}>Tone of voice</label>
         <div className={s.voices} role="radiogroup" aria-label="Tone of voice">
           {VOICES.map(([v, label, sample]) => (
-            <button key={v} type="button" role="radio" aria-checked={c.voice === v} className={s.voice} onClick={() => patch({ voice: v })}>
+            <button key={v} type="button" role="radio" aria-checked={c.voice === v} className={s.voice} onClick={() => setVoice(v)}>
               <strong>{label}</strong><span>{sample}</span>
             </button>
           ))}
         </div>
+      </Group>
+
+      <Group title="Launcher">
+        <label className={s.label} htmlFor="launcher">Label</label>
+        <input id="launcher" className={s.input} value={c.launcher.label ?? ""} placeholder={c.agent.name} onFocus={showLauncher}
+          onChange={(e) => patchLauncher({ label: e.target.value || undefined })} />
+        <label className={s.label}>Position</label>
+        <Thumbs<AgentConfig["launcher"]["position"]> label="Launcher position" value={c.launcher.position}
+          options={[["bottom-right", "Bottom right"], ["bottom-left", "Bottom left"]]} onChange={(position) => patchLauncher({ position })} onFocus={showLauncher}
+          render={(v) => <span className={s.artCorner} data-v={v}><i /></span>} />
+        <label className={s.label}>Style</label>
+        <Thumbs<"pill" | "icon"> label="Launcher style" value={c.launcher.style ?? "pill"}
+          options={[["pill", "Pill with label"], ["icon", "Icon only"]]} onChange={(style) => patchLauncher({ style })} onFocus={showLauncher}
+          render={(v) => <span className={s.artLauncher} data-v={v}><i />{v === "pill" && <b />}</span>} />
       </Group>
 
       <Group title="Products">
@@ -196,7 +233,7 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
       </Group>
 
       <details className={s.exact}>
-        <summary>Exact values <span className={s.muted}>— hex codes, custom font, launcher</span></summary>
+        <summary>Exact values <span className={s.muted}>— hex codes, custom font</span></summary>
         <HexField id="hex" label="Brand hex" value={c.brand} allowClear={false} placeholder="e.g. #FFFFFF"
           onCommit={(v) => { if (v) patch({ brand: v }); }} />
         <HexField id="accent" label="Accent hex (optional)" value={c.accent} allowClear placeholder="e.g. #FFFFFF"
@@ -206,13 +243,6 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
           description="Your page/panel background, e.g. #FFFFFF for white — leave blank to derive."
           onCommit={(v) => patch({ background: v })} />
         <FontUrlField value={c.font.url} onCommit={(v) => patch({ font: { ...c.font, url: v } })} />
-        <label className={s.label}>Launcher position</label>
-        <div className={s.inlineRadios}>
-          <label><input type="radio" checked={c.launcher.position === "bottom-right"} onChange={() => patch({ launcher: { ...c.launcher, position: "bottom-right" } })} /> Bottom right</label>
-          <label><input type="radio" checked={c.launcher.position === "bottom-left"} onChange={() => patch({ launcher: { ...c.launcher, position: "bottom-left" } })} /> Bottom left</label>
-        </div>
-        <label className={s.label} htmlFor="launcher">Launcher label</label>
-        <input id="launcher" className={s.input} value={c.launcher.label ?? ""} placeholder={c.agent.name} onChange={(e) => patch({ launcher: { ...c.launcher, label: e.target.value || undefined } })} />
       </details>
     </div>
   );

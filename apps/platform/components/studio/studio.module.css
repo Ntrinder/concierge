@@ -1,5 +1,6 @@
 /* Studio-only tokens on top of the platform palette in globals.css */
-.app { min-height: 100vh; --line-strong: #d6d3ca; }
+/* --topbar: 14px padding × 2 + the 32px step pills + 1px border */
+.app { min-height: 100vh; --line-strong: #d6d3ca; --topbar: 61px; }
 .topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px; padding: 14px clamp(16px, 3vw, 32px); background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; }
 .logoMark { width: 18px; height: 18px; border-radius: 50% 50% 50% 4px; background: var(--ink); }
@@ -93,20 +94,25 @@
   .matchPreview { min-height: 520px; }
   .roleEditor { margin-left: 0; }
 }
-.tune { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: calc(100vh - 61px); }
-.previewCol { display: flex; flex-direction: column; min-width: 0; padding: 16px; gap: 12px; }
+.tune { display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: minmax(0, 1fr); height: calc(100vh - var(--topbar)); }
+/* Stays put under the topbar while the side panel scrolls on its own */
+.previewCol { position: sticky; top: var(--topbar); align-self: start; height: calc(100vh - var(--topbar)); display: flex; flex-direction: column; min-width: 0; padding: 16px; gap: 12px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
 .segmented { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--line); }
-.segmented button { border: 0; background: transparent; padding: 6px 10px; border-radius: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.segmented button { border: 0; background: transparent; padding: 6px 10px; border-radius: 8px; font-size: 13px; line-height: 18px; color: var(--ink-2); cursor: pointer; }
 .segmented button[aria-checked="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
 .stageWrap { flex: 1; min-height: 0; display: grid; place-items: center; overflow: auto; border-radius: 16px; background: repeating-linear-gradient(45deg, #f1f0eb 0 10px, #eeede7 10px 20px); }
 .stageDesktop, .stagePhone { position: relative; overflow: hidden; box-shadow: 0 20px 60px -20px rgb(0 0 0 / .25); }
 .stageDesktop { width: 100%; height: 100%; min-height: 560px; }
-/* content-box so the screen itself is a true 375px wide inside the 10px bezel */
-.stagePhone { box-sizing: content-box; width: 375px; height: 740px; border-radius: 36px; border: 10px solid #111; }
+/*
+ * content-box so the screen itself is a true 375px wide inside the 10px bezel. Height fits what's left of the
+ * column: 32px column padding + 36px toolbar (18px line + 6px×2 + 3px×2) + 12px×2 gaps + 18px note
+ * + 16px×2 breathing room around the phone + 20px bezel = 162px.
+ */
+.stagePhone { box-sizing: content-box; width: 375px; height: min(812px, max(480px, calc(100vh - var(--topbar) - 162px))); border-radius: 36px; border: 10px solid #111; }
 .agentLayer { position: absolute; inset: 0; }
 .agentLayer > * { width: 100%; height: 100%; }
-.previewNote { margin: 0; font-size: 13px; color: var(--ink-3); }
+.previewNote { margin: 0; font-size: 13px; line-height: 18px; color: var(--ink-3); }
 .home { position: absolute; inset: 0; overflow: hidden; }
 .homeHeader { height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 1px solid rgb(127 127 127 / .2); }
 .homeLogo { width: 26px; height: 26px; object-fit: contain; flex: none; }
@@ -152,6 +158,12 @@
 .artDensity[data-v="compact"] { gap: 3px; }
 .artDensity[data-v="regular"] { gap: 6px; }
 .artDensity[data-v="airy"] { gap: 9px; }
+.artCorner { position: relative; width: 44px; height: 28px; border-radius: 4px; border: 1px solid var(--ink-3); }
+.artCorner i { position: absolute; bottom: 3px; right: 3px; width: 8px; height: 8px; border-radius: 2px; background: var(--ink); }
+.artCorner[data-v="bottom-left"] i { right: auto; left: 3px; }
+.artLauncher { display: flex; align-items: center; gap: 3px; height: 16px; padding: 2px; border-radius: 999px; background: var(--ink); }
+.artLauncher i { width: 12px; height: 12px; border-radius: 50%; background: var(--paper); }
+.artLauncher b { width: 22px; height: 3px; margin-right: 3px; border-radius: 2px; background: var(--paper); }
 .artCard { display: grid; gap: 3px; width: 44px; }
 .artCard i { height: 4px; background: var(--ink-3); border-radius: 2px; }
 .artCard[data-v="visual"] { grid-template-columns: 14px 1fr; grid-template-rows: repeat(2, 8px); }
@@ -176,8 +188,8 @@
 .fitSwatches { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
 .fitSwatches span { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .15); }
 @media (max-width: 960px) {
-  .tune { grid-template-columns: 1fr; height: auto; }
-  .previewCol { height: 80vh; }
+  .tune { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
+  .previewCol { position: static; height: 80vh; }
   .side { border-left: 0; border-top: 1px solid var(--line); }
   .stagePhone { transform: scale(.8); transform-origin: top center; }
 }
