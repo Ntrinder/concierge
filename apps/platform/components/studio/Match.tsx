@@ -61,7 +61,8 @@ export function Match({ ex, onContinue, onRetry, onAlt }: {
   const [logoError, setLogoError] = useState("");
   const patch = (p: Partial<AgentConfig>) => setDraft((d) => ({ ...d, ...p }));
 
-  const host = new URL(ex.url).hostname.replace(/^www\./, "");
+  const u = new URL(ex.url);
+  const host = u.hostname.replace(/^www\./, "") + (u.pathname !== "/" ? u.pathname.replace(/\/$/, "") : "");
   const name = ex.name || host;
   const site: SiteInfo = {
     name, font: ex.fonts[0], fontUrl: ex.fontUrl, logo: uploaded ?? ex.logo, nav: ex.nav, headline: ex.headline, eyebrow: ex.eyebrow,
@@ -86,7 +87,9 @@ export function Match({ ex, onContinue, onRetry, onAlt }: {
 
   // Font
   const extractedFonts = [...new Set([ex.headingFont, ...ex.fonts].filter(Boolean) as string[])];
-  const fontTitle = draft.font.display ?? "Your site's own font";
+  // While the merchant keeps their own fonts, name the site's body font (what the assistant inherits), as the mockup does
+  const siteFont = draft.font.display && extractedFonts.includes(draft.font.display) ? ex.bodyFont ?? draft.font.display : draft.font.display;
+  const fontTitle = siteFont ?? "Your site's own font";
   const fontLine = draft.font.display
     ? extractedFonts.includes(draft.font.display) ? "Your site's font, loaded the same way your pages load it" : "A font you picked, loaded from Google Fonts"
     : extractedFonts.length ? "The assistant will inherit whatever your pages use." : "We couldn't name it, so the assistant will inherit whatever your pages use.";
@@ -165,7 +168,7 @@ export function Match({ ex, onContinue, onRetry, onAlt }: {
           </RoleRow>
 
           <RoleRow id="font" open={open === "font"} onToggle={() => toggle("font")}
-            sample={<span className={`${s.roleSample} ${s.roleFont}`} style={{ fontFamily: draft.font.display ? `"${draft.font.display}", inherit` : undefined }} aria-hidden="true">Aa</span>}
+            sample={<span className={`${s.roleSample} ${s.roleFont}`} style={{ fontFamily: siteFont ? `"${siteFont}", inherit` : undefined }} aria-hidden="true">Aa</span>}
             title={fontTitle} line={fontLine}>
             <label className={s.label} htmlFor="match-font">Font</label>
             <select id="match-font" className={s.select} value={draft.font.display ?? OWN_FONT} onChange={(e) => setFont(e.target.value)}>

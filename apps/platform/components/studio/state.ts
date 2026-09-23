@@ -67,7 +67,7 @@ export function studioReducer(s: StudioState, a: Action): StudioState {
 }
 
 function greetingFor(name: string) {
-  return `Hi! Welcome to ${name}. Tell me what you're looking for and I'll help you find the right thing.`;
+  return `Hi! Welcome to ${name.replace(/\.+$/, "")}. Tell me what you're looking for and I'll help you find the right thing.`;
 }
 
 /**
