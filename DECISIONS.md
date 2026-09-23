@@ -8,13 +8,20 @@ The controls speak in merchant terms — look, personality, which products it le
 
 ## Keeping the agent right across brands
 
-One config becomes roughly 40 derived design tokens in OKLCH, not a handful of raw colours. Contrast against AA is enforced per token while preserving the input hue, rather than falling back to a generic safe palette — a merchant's chosen colour should still look like their colour once it's fixed. Every component reads only from tokens; a lint test fails the build on any literal colour in component code, which is what makes the six brands in `/lab` a real proof rather than a demo I hand-tuned.
+One config becomes roughly 40 derived design tokens in OKLCH, not a handful of raw colours. Contrast against AA is enforced per token while preserving the input hue, rather than falling back to a generic safe palette — a merchant's chosen colour should still look like their colour once it's fixed. Every component reads only from tokens; a test fails on any literal colour in the widget stylesheet, which is what makes the six brands in `/lab` a real proof rather than a demo I hand-tuned.
 
 The widget runs inside a `<concierge-agent>` Shadow DOM web component with a reset of inherited text properties, so a hostile or just messy host stylesheet can't reach in and break it. `font-family` is the one property I deliberately let inherit through the shadow boundary, so "use my site's font" needs no setup for the common case. Card layout and the agent's voice shift with the brand's personality setting too, not just colour — a technical outdoor brand and a warm editorial one shouldn't be palette swaps of each other.
 
 ## What AI tooling suggested that I overrode
 
-I rejected an iframe-based embed even though it's the more common answer for host-page isolation — it breaks font inheritance and can't do a real mobile full-screen presentation, both of which mattered more here than the isolation. I rejected a real LLM behind the agent in favour of a scripted engine, since a scripted `route`/`steps` engine is deterministic to test and demo. Review caught the constraint strip updating before the agent had finished narrating (it should land after the reveal, not race it), and caught the preview remounting on a stray React key, which silently dropped the merchant's in-progress config. The SSRF guard for URL extraction also trusted the incoming Host header in one path; that was closed to a dev-only allowlist with re-validated redirects.
+I worked from an AI-written design and plan, and these are places I went against it:
+
+- **Real LLM and an iframe embed.** The design suggested both. I chose a scripted engine because a live demo must be deterministic and testable (the `route`/`steps` seam keeps an LLM drop-in possible), and Shadow DOM because an iframe breaks font inheritance and can't do a real full-screen phone sheet.
+- **Constraint chips.** The plan updated the chips the moment a message was sent, before the agent had "spoken". I made them follow the reveal.
+- **Preview remounting.** The plan keyed the preview element on open/closed; the remount dropped its `.config`, blanking the merchant's design. I removed the key.
+- **Contrast engine.** The plan chained single-target contrast fixes, which failed AA on mid-grey backgrounds (fixing one surface broke the other). I replaced it with a joint search and a mid-grey test sweep.
+- **SSRF guard.** The plan's extractor trusted the Host header and followed redirects. I made the allowlist local-only or operator-set, and re-validate every redirect.
+- **Silent overwrite.** The plan's config endpoint allowed silent overwrite by public id. I added a per-config edit token: returned once, stored only as a SHA-256, required to overwrite.
 
 ## What I cut for time
 
@@ -22,7 +29,7 @@ A real LLM, accounts/auth, a real catalog import pipeline (products are invented
 
 ## The weakest part
 
-URL extraction is best-effort and it shows on real, JS-heavy or anti-bot sites — `aesop.com` 403s the extractor's fetch outright, and even a cooperative site like `stripe.com` returns self-hosted font names that don't resolve to loadable web fonts and picks up the wrong logo image. There's no auth, so any saved config id can be overwritten by anyone who has it. And 375px was verified with DevTools/simulated widths, not a real phone.
+URL extraction is best-effort and it shows on real, JS-heavy or anti-bot sites — `aesop.com` 403s the extractor's fetch outright, and even a cooperative site like `stripe.com` returns self-hosted font names that don't resolve to loadable web fonts and picks up the wrong logo image. There are no accounts: the edit token lives in one browser's local storage, so clearing it (or switching machines) means saving a new design and re-pasting the snippet. And 375px was verified with DevTools/simulated widths, not a real phone.
 
 ## With another hour
 
