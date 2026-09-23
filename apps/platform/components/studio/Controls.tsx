@@ -1,5 +1,5 @@
 "use client";
-import type { Dispatch, ReactNode } from "react";
+import type { Dispatch, FocusEvent, ReactNode } from "react";
 import { googleFontUrl, type AgentConfig, type CardStyle, type Density, type Shape, type Voice } from "@concierge/agent/core";
 import { FONT_CHOICES } from "@/lib/fonts";
 import { isDarkHex, type Action, type StudioState } from "./state";
@@ -36,6 +36,22 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
     patch({ font: { family, ...(display ? { display } : {}), ...(families.length ? { url: googleFontUrl(families) } : {}) } });
   };
   const candidates = state.candidates.length ? state.candidates : [{ hex: c.brand, reason: "current" }];
+
+  // Hex-field blur rule: trimmed empty -> clear (revert to derived), if clearing is allowed;
+  // valid 6-digit hex -> set; anything else -> no-op, and reset the field's displayed text
+  // back to the current value (the input is uncontrolled, so an unchanged value wouldn't
+  // otherwise force a re-render that resets it).
+  const hexBlur = (current: string | undefined, allowClear: boolean, onSet: (v: string | undefined) => void) =>
+    (e: FocusEvent<HTMLInputElement>) => {
+      const v = e.target.value.trim();
+      if (v === "") {
+        if (allowClear) onSet(undefined);
+        else e.target.value = current ?? "";
+        return;
+      }
+      if (HEX.test(v)) { onSet(v); return; }
+      e.target.value = current ?? "";
+    };
 
   return (
     <div className={s.controls}>
@@ -109,13 +125,16 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
       <details className={s.exact}>
         <summary>Exact values <span className={s.muted}>— hex codes, custom font, launcher</span></summary>
         <label className={s.label} htmlFor="hex">Brand hex</label>
-        <input id="hex" className={s.input} defaultValue={c.brand} key={c.brand} onBlur={(e) => HEX.test(e.target.value) && patch({ brand: e.target.value })} />
+        <input id="hex" className={s.input} defaultValue={c.brand} key={c.brand}
+          onBlur={hexBlur(c.brand, false, (v) => v && patch({ brand: v }))} />
         <label className={s.label} htmlFor="accent">Accent hex (optional)</label>
-        <input id="accent" className={s.input} defaultValue={c.accent ?? ""} placeholder="Derived from brand" onBlur={(e) => patch({ accent: HEX.test(e.target.value) ? e.target.value : undefined })} />
+        <input id="accent" className={s.input} defaultValue={c.accent ?? ""} key={c.accent ?? ""} placeholder="Derived from brand"
+          onBlur={hexBlur(c.accent, true, (v) => patch({ accent: v }))} />
         <label className={s.label} htmlFor="bg">Background hex (optional)</label>
-        <input id="bg" className={s.input} defaultValue={c.background ?? ""} key={c.background} placeholder="Derived from brand" onBlur={(e) => patch({ background: HEX.test(e.target.value) ? e.target.value : undefined })} />
+        <input id="bg" className={s.input} defaultValue={c.background ?? ""} key={c.background ?? ""} placeholder="Derived from brand"
+          onBlur={hexBlur(c.background, true, (v) => patch({ background: v }))} />
         <label className={s.label} htmlFor="fonturl">Custom font stylesheet URL</label>
-        <input id="fonturl" className={s.input} defaultValue={c.font.url ?? ""} placeholder="https://fonts.googleapis.com/…" onBlur={(e) => patch({ font: { ...c.font, url: e.target.value || undefined } })} />
+        <input id="fonturl" className={s.input} defaultValue={c.font.url ?? ""} key={c.font.url ?? ""} placeholder="https://fonts.googleapis.com/…" onBlur={(e) => patch({ font: { ...c.font, url: e.target.value || undefined } })} />
         <label className={s.label}>Launcher position</label>
         <div className={s.inlineRadios}>
           <label><input type="radio" checked={c.launcher.position === "bottom-right"} onChange={() => patch({ launcher: { ...c.launcher, position: "bottom-right" } })} /> Bottom right</label>
