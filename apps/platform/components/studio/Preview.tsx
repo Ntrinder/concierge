@@ -1,7 +1,7 @@
 "use client";
 import type { Dispatch } from "react";
 import { AgentPreview } from "@/components/AgentPreview";
-import { MockStore } from "./MockStore";
+import { HomepageMock } from "./HomepageMock";
 import type { Action, StudioState } from "./state";
 import s from "./studio.module.css";
 
@@ -30,7 +30,7 @@ export function Preview({ state, dispatch }: { state: StudioState; dispatch: Dis
       {site.fontUrl && <link rel="stylesheet" href={site.fontUrl} />}
       <div className={s.stageWrap}>
         <div className={preview.device === "mobile" ? s.stagePhone : s.stageDesktop} style={{ fontFamily: siteFont }}>
-          <MockStore config={config} site={site} host={preview.host} />
+          <HomepageMock config={config} site={site} host={preview.host} device={preview.device} />
           <div className={s.agentLayer}>
             <AgentPreview config={config} autoplay={2} open={preview.open} highlight={state.highlight} />
           </div>

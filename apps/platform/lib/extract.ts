@@ -11,7 +11,21 @@ export interface Extraction {
   fonts: string[];
   fontUrl?: string;
   radius?: number;
+  /** first 3–4 nav link labels */
+  nav?: string[];
+  /** first h1, and the short line right before it */
+  headline?: string;
+  eyebrow?: string;
+  /** the hero's primary call to action */
+  button?: { text?: string; bg?: string; color?: string; radius?: number };
+  headingFont?: string;
+  bodyFont?: string;
+  headingCase?: "none" | "uppercase";
+  /** em, 0–0.2 */
+  headingTracking?: number;
 }
+
+interface Rule { sel: string; decls: [string, string][] }
 
 const toOklch = converter("oklch");
 const COLOR_RE = /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)|oklch\([^)]*\)/gi;
@@ -107,6 +121,69 @@ function firstFamily(value: string): string | null {
   return fam;
 }
 
+/**
+ * Replaces `var(--x)` / `var(--x, fallback)` with the first declared value of --x.
+ * Innermost calls resolve first, so nested fallbacks and vars that point at vars
+ * (a couple of levels deep) come out as plain values; unknown vars without a fallback become "".
+ */
+export function resolveVars(value: string, vars: Map<string, string>): string {
+  let out = value;
+  for (let i = 0; i < 3 && out.includes("var("); i++) {
+    out = out.replace(/var\(\s*(--[\w-]+)\s*(?:,([^()]*))?\)/g, (_, name: string, fb?: string) => vars.get(name) ?? fb?.trim() ?? "");
+  }
+  return out;
+}
+
+/** Family from a `font` shorthand (`700 clamp(…) / .88 Barlow Condensed, sans-serif`) or a plain `font-family`. */
+export function familyFrom(prop: string, value: string): string | null {
+  if (prop === "font-family") return firstFamily(value);
+  if (prop !== "font") return null;
+  let v = value;
+  for (let prev = ""; prev !== v; ) { prev = v; v = v.replace(/[\w-]+\([^()]*\)/g, " "); }
+  v = v.replace(/^(\s*(normal|italic|oblique|bold|bolder|lighter|small-caps|condensed|semi-condensed|expanded|(x+-)?(small|large)|medium|smaller|larger|\d+|[\d.]+[a-z%]+|\/\s*[\d.]+[a-z%]*|\/))+\s*/i, "");
+  return v ? firstFamily(v) : null;
+}
+
+/**
+ * Heading case and tracking for the agent's `heading` tokens: uppercase when the CSS
+ * says so or the headline itself is set in caps; tracking from a positive letter-spacing
+ * (px read against a 16px root), else a light 0.06em for caps. Clamped to 0–0.2em.
+ */
+export function headingStyle(input: { transform?: string; letterSpacing?: string; headline?: string }): { headingCase: "none" | "uppercase"; headingTracking: number } {
+  const letters = input.headline?.match(/\p{L}/gu) ?? [];
+  const capsText = letters.length >= 4 && letters.every((ch) => ch === ch.toUpperCase() && ch !== ch.toLowerCase());
+  const upper = /uppercase/i.test(input.transform ?? "") || capsText;
+  const ls = input.letterSpacing?.trim().match(/^(-?[\d.]+)(em|rem|px)$/i);
+  let tracking = 0;
+  if (ls) tracking = parseFloat(ls[1]!) / (ls[2]!.toLowerCase() === "px" ? 16 : 1);
+  if (!(tracking > 0)) tracking = upper ? 0.06 : 0;
+  return { headingCase: upper ? "uppercase" : "none", headingTracking: Math.round(Math.min(0.2, Math.max(0, tracking)) * 1000) / 1000 };
+}
+
+const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n - 1).replace(/\s+\S*$/, "")}…`);
+/** Visible text with <br> as a space and whitespace collapsed. */
+const textOf = (el: HTMLElement) => parseHtml(el.innerHTML.replace(/<br\s*\/?>/gi, " ")).text.replace(/\s+/g, " ").trim();
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const STATEFUL = /:(hover|focus|active|visited|focus-visible|focus-within|disabled)|::/;
+const SKIP_NAV = /cart|basket|bag|account|log ?in|search/i;
+
+/**
+ * Declarations that apply to the element matched by `test`, where `test` sees the last
+ * compound of each selector (`.hero h1` → `h1`). Later rules win; hover/focus states and
+ * pseudo-elements are skipped. Specificity is ignored — good enough for a preview.
+ */
+function declsWhere(rules: Rule[], test: (compound: string) => boolean): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const r of rules) {
+    const hit = r.sel.split(",").some((part) => {
+      const p = part.trim();
+      return !STATEFUL.test(p) && test(p.split(/[\s>+~]+/).filter(Boolean).pop() ?? "");
+    });
+    if (hit) for (const [k, v] of r.decls) out.set(k, v);
+  }
+  return out;
+}
+
 function findLogo(root: HTMLElement, base: URL): string | undefined {
   const img = root.querySelectorAll("img").find((el) => {
     const hay = `${el.getAttribute("alt") ?? ""} ${el.getAttribute("src") ?? ""} ${el.getAttribute("class") ?? ""} ${el.parentNode?.getAttribute?.("class") ?? ""}`;
@@ -150,35 +227,42 @@ export async function extractBrand(rawUrl: string): Promise<Extraction> {
   const fontTally = new Map<string, number>();
   const radii: number[] = [];
 
+  const rules: Rule[] = [];
   for (const chunk of css) {
     for (const [, selRaw, body] of chunk.matchAll(RULE_RE)) {
-      const sel = selRaw!.trim().toLowerCase();
-      for (const [, propRaw, valRaw] of body!.matchAll(DECL_RE)) {
-        const prop = propRaw!.toLowerCase();
-        const val = valRaw!.trim();
-        if (prop === "font-family") {
-          const fam = firstFamily(val);
-          if (fam) fontTally.set(fam, (fontTally.get(fam) ?? 0) + (ROOTISH.test(sel) ? 5 : 1));
-          continue;
-        }
-        if (prop === "border-radius" && /button|btn/.test(sel) && val.endsWith("px")) {
-          const px = parseFloat(val);
-          if (!Number.isNaN(px)) radii.push(px);
-          continue;
-        }
-        for (const raw of val.match(COLOR_RE) ?? []) {
-          const hex = toHex(raw);
-          if (!hex) continue;
-          const chroma = toOklch(hex)?.c ?? 0;
-          if (prop.startsWith("--") && /bg|background|paper|canvas/.test(prop) && chroma < 0.06) { background ??= hex; continue; }
-          if (ROOTISH.test(sel) && prop.startsWith("background")) { background ??= hex; continue; }
-          if (ROOTISH.test(sel) && prop === "color") { text ??= hex; continue; }
-          if (chroma < 0.04) continue;
-          if (prop.startsWith("--") && /primary|brand|accent|main/.test(prop)) add(hex, 6, "named as a brand colour in your CSS");
-          else if (/button|btn|cta/.test(sel) && prop.startsWith("background")) add(hex, 4, "on your buttons");
-          else if (/(^|[\s,>])a(\b|:)|link/.test(sel) && prop === "color") add(hex, 3, "on your links");
-          else add(hex, 1, "used across your site");
-        }
+      rules.push({ sel: selRaw!.trim().toLowerCase(), decls: [...body!.matchAll(DECL_RE)].map(([, p, v]) => [p!.toLowerCase(), v!.trim()]) });
+    }
+  }
+  // Custom properties first (first declaration wins) so `background: var(--brand)` resolves
+  const vars = new Map<string, string>();
+  for (const r of rules) for (const [p, v] of r.decls) if (p.startsWith("--") && !vars.has(p)) vars.set(p, v);
+  const resolve = (v: string) => resolveVars(v, vars).trim();
+
+  for (const { sel, decls } of rules) {
+    for (const [prop, rawVal] of decls) {
+      const val = resolve(rawVal);
+      if (prop === "font-family") {
+        const fam = firstFamily(val);
+        if (fam) fontTally.set(fam, (fontTally.get(fam) ?? 0) + (ROOTISH.test(sel) ? 5 : 1));
+        continue;
+      }
+      if (prop === "border-radius" && /button|btn/.test(sel) && val.endsWith("px")) {
+        const px = parseFloat(val);
+        if (!Number.isNaN(px)) radii.push(px);
+        continue;
+      }
+      for (const raw of val.match(COLOR_RE) ?? []) {
+        const hex = toHex(raw);
+        if (!hex) continue;
+        const chroma = toOklch(hex)?.c ?? 0;
+        if (prop.startsWith("--") && /bg|background|paper|canvas/.test(prop) && chroma < 0.06) { background ??= hex; continue; }
+        if (ROOTISH.test(sel) && prop.startsWith("background")) { background ??= hex; continue; }
+        if (ROOTISH.test(sel) && prop === "color") { text ??= hex; continue; }
+        if (chroma < 0.04) continue;
+        if (prop.startsWith("--") && /primary|brand|accent|main/.test(prop)) add(hex, 6, "named as a brand colour in your CSS");
+        else if (/button|btn|cta/.test(sel) && prop.startsWith("background")) add(hex, 4, "on your buttons");
+        else if (/(^|[\s,>])a(\b|:)|link/.test(sel) && prop === "color") add(hex, 3, "on your links");
+        else add(hex, 1, "used across your site");
       }
     }
   }
@@ -201,6 +285,63 @@ export async function extractBrand(rawUrl: string): Promise<Extraction> {
   const fonts = [...new Set([...googleFamilies, ...[...fontTally.entries()].sort((a, b) => b[1] - a[1]).map(([f]) => f)])].slice(0, 3);
   const sortedRadii = radii.sort((a, b) => a - b);
 
+  // ── The homepage itself, for the studio's "your homepage" preview ──
+  const classesOf = (el: HTMLElement) => (el.getAttribute("class") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+  /** CSS-module class names are hashed, but the element's own class attr matches its selectors. */
+  const rulesFor = (classNames: string[]) => {
+    const res = classNames.map((c) => new RegExp(`\\.${escapeRe(c)}(?![\\w-])`));
+    return declsWhere(rules, (compound) => res.some((re) => re.test(compound)));
+  };
+  const rulesForTag = (tag: string) => declsWhere(rules, (compound) => new RegExp(`^${tag}(?![\\w-])`).test(compound));
+  const stylesOf = (el: HTMLElement) => {
+    const out = rulesFor(classesOf(el));
+    for (const [, p, v] of (el.getAttribute("style") ?? "").matchAll(DECL_RE)) out.set(p!.toLowerCase(), v!.trim());
+    return out;
+  };
+  const fontOf = (decls: Map<string, string>) => {
+    const fam = decls.get("font-family") ?? decls.get("font");
+    return fam ? familyFrom(decls.has("font-family") ? "font-family" : "font", resolve(fam)) ?? undefined : undefined;
+  };
+  const colourOf = (v?: string) => {
+    const raw = v ? resolve(v).match(COLOR_RE)?.[0] : undefined;
+    return raw ? toHex(raw) ?? undefined : undefined;
+  };
+
+  const navLinks = root.querySelectorAll("header nav a").length ? root.querySelectorAll("header nav a") : root.querySelectorAll("nav a");
+  const nav = [...new Set(navLinks.map(textOf).filter((t) => t && t.length <= 30 && !SKIP_NAV.test(t)))].slice(0, 4);
+
+  const h1 = root.querySelector("h1");
+  const headline = h1 ? clip(textOf(h1), 90) || undefined : undefined;
+  const before = h1?.previousElementSibling;
+  const eyebrowText = before && /^(p|span|div)$/i.test(before.tagName) ? textOf(before) : "";
+  const eyebrow = eyebrowText && eyebrowText.length <= 60 ? eyebrowText : undefined;
+
+  let button: Extraction["button"];
+  const scope = h1?.closest("section") ?? root.querySelector("main") ?? h1?.parentNode ?? null;
+  if (scope) {
+    const els = scope.querySelectorAll("h1, a, button");
+    const after = h1 ? els.slice(els.indexOf(h1) + 1).filter((el) => el.tagName !== "H1") : els;
+    const cta = after.find((el) => /btn|button|cta/i.test(el.getAttribute("class") ?? "")) ?? after.find((el) => { const t = textOf(el); return t && t.length <= 30; });
+    if (cta) {
+      const st = stylesOf(cta);
+      const bg = colourOf(st.get("background-color") ?? st.get("background"));
+      const r = st.get("border-radius") ? resolve(st.get("border-radius")!) : undefined;
+      const px = r ? parseFloat(r) : NaN;
+      // An unrounded button is a choice too: a styled one with no border-radius is square
+      const radius = r?.endsWith("%") && px >= 50 ? 999 : !Number.isNaN(px) ? Math.min(px, 999) : bg ? 0 : undefined;
+      button = { text: clip(textOf(cta), 30) || undefined, bg, color: colourOf(st.get("color")), radius };
+    }
+  }
+
+  const headDecls = h1 ? new Map([...rulesForTag("h1"), ...rulesFor(classesOf(h1))]) : rulesForTag("h1");
+  const h2Decls = rulesForTag("h2");
+  const pick = (prop: string) => headDecls.get(prop) ?? h2Decls.get(prop);
+  const headingFont = fontOf(headDecls) ?? fontOf(h2Decls);
+  const rootDecls = declsWhere(rules, (compound) => /^(body|html|:root)(?![\w-])/.test(compound));
+  const wrapper = root.querySelector("body")?.querySelector("[class]");
+  const bodyFont = fontOf(rootDecls) ?? (wrapper ? fontOf(stylesOf(wrapper)) : undefined);
+  const { headingCase, headingTracking } = headingStyle({ transform: pick("text-transform"), letterSpacing: pick("letter-spacing") && resolve(pick("letter-spacing")!), headline });
+
   return {
     url: url.href,
     name,
@@ -211,5 +352,13 @@ export async function extractBrand(rawUrl: string): Promise<Extraction> {
     fonts,
     fontUrl: googleHrefs[0] ? new URL(googleHrefs[0], url).href : undefined,
     radius: sortedRadii.length ? sortedRadii[Math.floor(sortedRadii.length / 2)] : undefined,
+    nav: nav.length ? nav : undefined,
+    headline,
+    eyebrow,
+    button,
+    headingFont,
+    bodyFont,
+    headingCase,
+    headingTracking,
   };
 }

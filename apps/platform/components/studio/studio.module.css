@@ -72,19 +72,25 @@
 .agentLayer { position: absolute; inset: 0; }
 .agentLayer > * { width: 100%; height: 100%; }
 .previewNote { margin: 0; font-size: 13px; color: var(--ink-3); }
-.mock { position: absolute; inset: 0; overflow: hidden; }
-.mockHeader { display: flex; align-items: center; gap: 24px; padding: 18px 28px; border-bottom: 1px solid rgb(127 127 127 / .2); }
-.mockLogo { height: 32px; width: auto; }
-.mockLogoText { font-size: 20px; font-weight: 600; }
-.mockNav { display: flex; gap: 20px; flex: 1; font-size: 14px; opacity: .75; }
-.mockCart { font-size: 14px; opacity: .75; }
-.mockHero { padding: 48px 28px; display: grid; gap: 14px; max-width: 560px; }
-.mockHeadline { font-size: clamp(28px, 4vw, 44px); line-height: 1.05; }
-.mockLine { height: 12px; border-radius: 6px; }
-.mockButton { width: 140px; height: 42px; margin-top: 8px; }
-.mockGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 28px; }
-.mockTile { aspect-ratio: 3 / 4; border-radius: 6px; }
-.stagePhone .mockNav, .stagePhone .mockGrid { display: none; }
+.home { position: absolute; inset: 0; overflow: hidden; }
+.homeHeader { height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 1px solid rgb(127 127 127 / .2); }
+.homeLogo { width: 26px; height: 26px; object-fit: contain; flex: none; }
+.homeMark { display: grid; place-items: center; width: 26px; height: 26px; flex: none; font-size: 15px; font-weight: 600; }
+.homeName { min-width: 0; font-size: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.homeNav { display: flex; gap: 20px; flex: 1; min-width: 0; margin-left: 12px; overflow: hidden; white-space: nowrap; font-size: 14px; opacity: .75; }
+.homeBasket { flex: none; margin-left: auto; font-size: 13px; opacity: .75; white-space: nowrap; }
+/* Dimmed like the mockup so the assistant, not the page, is what you look at */
+.homeHero { padding: 32px 22px; display: grid; gap: 12px; justify-items: start; max-width: 620px; opacity: .55; }
+.homeEyebrow { font-size: 14px; }
+.homeHeadline { font-size: clamp(28px, 4vw, 44px); line-height: 1.05; font-weight: 600; }
+.homeLine { height: 12px; border-radius: 6px; }
+.homeButton { display: inline-flex; align-items: center; min-height: 40px; padding: 0 20px; margin-top: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.homeGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 22px; }
+.homeTile { aspect-ratio: 3 / 4; border-radius: 6px; }
+.homeChip { position: absolute; bottom: 22px; left: 22px; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+.homeChip[data-side="right"] { left: auto; right: 22px; }
+.home[data-device="mobile"] .homeHeadline { font-size: clamp(24px, 7vw, 30px); }
+.home[data-device="mobile"] .homeGrid { grid-template-columns: repeat(2, 1fr); }
 .side { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); background: var(--card); }
 .sideScroll { flex: 1; overflow-y: auto; padding: 20px 20px 8px; }
 .sideFoot { display: grid; gap: 12px; padding: 16px 20px; border-top: 1px solid var(--line); }

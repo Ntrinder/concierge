@@ -9,12 +9,27 @@ export interface StudioState {
   source?: Source;
   extraction?: Extraction;
   candidates: { hex: string; reason: string }[];
-  site: { name: string; font?: string; fontUrl?: string; logo?: string };
+  site: SiteInfo;
   savedId?: string;
   /** returned once by POST /api/configs; required to overwrite savedId */
   editToken?: string;
   preview: { device: "desktop" | "mobile"; open: boolean; host: "light" | "dark" };
   highlight: string | null;
+}
+/** What the "your homepage" preview is composed from; everything past `name` is read from their site. */
+export interface SiteInfo {
+  name: string;
+  font?: string;
+  fontUrl?: string;
+  logo?: string;
+  nav?: string[];
+  headline?: string;
+  eyebrow?: string;
+  button?: Extraction["button"];
+  background?: string;
+  text?: string;
+  headingFont?: string;
+  bodyFont?: string;
 }
 export type Action =
   | { type: "start"; config: AgentConfig; source: Source; extraction?: Extraction; candidates: StudioState["candidates"]; site: StudioState["site"] }
@@ -77,7 +92,7 @@ export function configFromExtraction(ex: Extraction): AgentConfig {
   const name = ex.name || new URL(ex.url).hostname.replace(/^www\./, "");
   const bg = ex.background;
   const brand = ex.brand[0]?.hex ?? DEFAULT_CONFIG.brand;
-  const display = ex.fonts[0];
+  const display = ex.headingFont ?? ex.fonts[0];
   return {
     ...DEFAULT_CONFIG,
     brand,
@@ -85,6 +100,7 @@ export function configFromExtraction(ex: Extraction): AgentConfig {
     surface: bg && isDarkHex(bg) ? "dark" : "light",
     font: { family: "inherit", ...(display ? { display, url: ex.fontUrl ?? googleFontUrl([display]) } : {}) },
     shape: shapeFromRadius(ex.radius),
+    heading: { case: ex.headingCase ?? "none", tracking: ex.headingTracking ?? 0 },
     agent: { name: `${name} assistant`, avatar: avatarFromUrl(ex.logo), greeting: greetingFor(name) },
     launcher: { position: "bottom-right", label: "Need a hand?" },
   };

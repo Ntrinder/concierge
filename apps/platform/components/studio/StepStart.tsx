@@ -47,7 +47,8 @@ export function StepStart({ dispatch }: { dispatch: Dispatch<Action> }) {
     const reordered = { ...ex, brand: [ex.brand[chosen]!, ...ex.brand.filter((_, i) => i !== chosen)] };
     const name = ex.name || new URL(ex.url).hostname;
     dispatch({ type: "start", source: "url", extraction: ex, config: configFromExtraction(reordered), candidates: ex.brand,
-      site: { name, font: ex.fonts[0], fontUrl: ex.fontUrl, logo: ex.logo } });
+      site: { name, font: ex.fonts[0], fontUrl: ex.fontUrl, logo: ex.logo, nav: ex.nav, headline: ex.headline, eyebrow: ex.eyebrow, button: ex.button,
+        background: ex.background, text: ex.text, headingFont: ex.headingFont, bodyFont: ex.bodyFont } });
   }
 
   async function onLogo(file: File | undefined) {
