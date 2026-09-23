@@ -2,7 +2,8 @@ import { useEffect, useRef } from "preact/hooks";
 import type { AgentConfig, Message } from "../types";
 import { Avatar } from "./Header";
 import { Compare } from "./Compare";
-import { AddedNote, NotifyForm } from "./NotifyForm";
+import { InBasket } from "./InBasket";
+import { NotifyForm } from "./NotifyForm";
 import { ProductList } from "./ProductCard";
 
 interface Props {
@@ -59,11 +60,11 @@ export function MessageList({ config, messages, visible, typing, compact, animat
               </div>
             );
           case "compare":
-            return <div key={m.id} class="msg msg-rich"><Compare config={config} productIds={m.productIds} compact={compact} onChoose={onChoose} /></div>;
+            return <div key={m.id} class="msg msg-rich"><Compare config={config} productIds={m.productIds} chosen={m.chosen} compact={compact} onChoose={onChoose} /></div>;
           case "notify-form":
             return <div key={m.id} class="msg msg-rich"><NotifyForm done={m.done} onSubmit={(email) => onNotify(m.id, email)} /></div>;
           case "added":
-            return <div key={m.id} class="msg msg-rich"><AddedNote config={config} productId={m.productId} /></div>;
+            return <div key={m.id} class="msg msg-rich"><InBasket config={config} productId={m.productId} options={m.options} count={m.count} /></div>;
         }
       })}
       {typing && (

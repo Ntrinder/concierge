@@ -33,6 +33,13 @@ function normalize(raw: unknown): AgentConfig | null {
     ...(str(f?.display) ? { display: str(f?.display) } : {}),
     ...(str(f?.url) ? { url: str(f?.url) } : {}),
   };
+  const validUrl = (v: unknown): v is string => typeof v === "string" && ((v.startsWith("/") && !v.startsWith("//")) || v.startsWith("https://"));
+  const b = c.basket && typeof c.basket === "object" ? c.basket : null;
+  const basket = {
+    ...(validUrl(b?.checkoutUrl) ? { checkoutUrl: b!.checkoutUrl } : {}),
+    ...(validUrl(b?.basketUrl) ? { basketUrl: b!.basketUrl } : {}),
+  };
+
   return {
     ...c,
     surface: c.surface === "dark" ? "dark" : "light",
@@ -43,6 +50,7 @@ function normalize(raw: unknown): AgentConfig | null {
     cardStyle: c.cardStyle ?? "visual",
     agent: { ...c.agent, greeting: c.agent.greeting ?? "" },
     launcher: c.launcher && typeof c.launcher === "object" ? c.launcher : { position: "bottom-right" },
+    ...(Object.keys(basket).length ? { basket } : {}),
   } as AgentConfig;
 }
 

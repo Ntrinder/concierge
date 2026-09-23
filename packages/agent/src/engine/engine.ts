@@ -1,10 +1,10 @@
-import { CATALOGS } from "../catalogs";
+import { CATALOGS, getProduct } from "../catalogs";
 import type { AgentDraft, Constraint, ConvState, Message, StoreKey, Voice, VoiceCopy } from "../types";
 import { SCRIPTS } from "./index";
 import { present, type Ctx, type TurnOutput } from "./present";
 
 export function initialState(store: StoreKey, voice: Voice): ConvState {
-  return { store, voice, step: "start", turn: 0, seq: 0, constraints: [], messages: [], replies: SCRIPTS[store].greetingReplies, lastShown: [] };
+  return { store, voice, step: "start", turn: 0, seq: 0, constraints: [], messages: [], replies: SCRIPTS[store].greetingReplies, lastShown: [], basketCount: 0 };
 }
 
 type NewMessage = { role: "user"; kind: "text"; text: string } | ({ role: "agent" } & AgentDraft);
@@ -60,14 +60,27 @@ export function removeConstraint(state: ConvState, key: string): ConvState {
   return apply(state, { constraints, messages: out.messages, lastShown: out.lastShown, replies: state.replies }, state.step);
 }
 
-export function markAdded(state: ConvState, productId: string): ConvState {
+export function markAdded(state: ConvState, productId: string, opts: { giftWrap: boolean } = { giftWrap: false }): ConvState {
+  const script = SCRIPTS[state.store];
   const v = (c: VoiceCopy) => c[state.voice];
-  return apply(state, {
-    messages: [
-      { kind: "added", productId },
-      { kind: "text", text: v({ warm: "Wonderful choice — it's in your basket. Anything else I can help you find?", neutral: "Added to your basket. Anything else?", terse: "In basket." }) },
-    ],
-    replies: [],
+  const product = getProduct(state.store, productId);
+  const count = state.basketCount + 1;
+  const format = product?.specs.find((s) => s.label === "Format")?.value;
+  const options = [...(format ? [format] : []), ...(opts.giftWrap ? ["Gift wrapped"] : [])];
+
+  // Attribute the *most recent* compare that offered this product, so choosing
+  // from an older comparison doesn't retroactively mark a later one.
+  const target = [...state.messages].reverse().find((m) => m.role === "agent" && m.kind === "compare" && m.productIds.includes(productId) && !m.chosen);
+  const messages = target ? state.messages.map((m) => (m.id === target.id ? { ...m, chosen: productId } : m)) : state.messages;
+  const s = { ...state, messages };
+
+  const after = product && script.afterAdd ? script.afterAdd({ state: s, products: CATALOGS[s.store], text: "", v }, product) : undefined;
+  const fallback: AgentDraft = { kind: "text", text: v({ warm: "It's in your basket. Anything else I can help you find?", neutral: "Added. Anything else?", terse: "Added." }) };
+
+  return apply({ ...s, basketCount: count }, {
+    messages: [{ kind: "added", productId, options, count }, ...(after?.messages.length ? after.messages : [fallback])],
+    replies: after?.replies ?? [],
+    step: after?.step,
   }, state.step);
 }
 
@@ -82,6 +95,8 @@ export function submitNotify(state: ConvState, messageId: string, email: string)
 
 export function replay(store: StoreKey, voice: Voice, count: number): ConvState {
   let s = initialState(store, voice);
-  for (const input of SCRIPTS[store].demoInputs.slice(0, count)) s = send(s, input);
+  for (const input of SCRIPTS[store].demoInputs.slice(0, count)) {
+    s = typeof input === "string" ? send(s, input) : markAdded(s, input.add, { giftWrap: input.giftWrap ?? false });
+  }
   return s;
 }

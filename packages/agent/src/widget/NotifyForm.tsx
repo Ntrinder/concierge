@@ -1,6 +1,4 @@
 import { useState } from "preact/hooks";
-import { getProduct } from "../catalogs";
-import type { AgentConfig } from "../types";
 import { CheckIcon } from "./icons";
 
 export function NotifyForm({ done, onSubmit }: { done?: string; onSubmit: (email: string) => void }) {
@@ -12,9 +10,4 @@ export function NotifyForm({ done, onSubmit }: { done?: string; onSubmit: (email
       <button type="submit" class="btn btn-primary t-btn">Notify me</button>
     </form>
   );
-}
-
-export function AddedNote({ config, productId }: { config: AgentConfig; productId: string }) {
-  const p = getProduct(config.store, productId);
-  return <div class="added" role="status"><CheckIcon /> Added to basket: {p?.name}</div>;
 }

@@ -7,10 +7,11 @@ export interface TurnOutput { messages: AgentDraft[]; replies: Reply[]; constrai
 export interface Script {
   store: StoreKey;
   opening: string;
-  demoInputs: string[];
+  demoInputs: (string | { add: string; giftWrap?: boolean })[];
   greetingReplies: Reply[];
   route(text: string, state: ConvState): string;
   steps: Record<string, (ctx: Ctx) => TurnOutput>;
+  afterAdd?(ctx: Ctx, product: Product): { messages: AgentDraft[]; replies: Reply[]; step?: string };
 }
 
 const EMPTY: VoiceCopy = {

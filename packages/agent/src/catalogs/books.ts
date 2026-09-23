@@ -6,13 +6,14 @@ interface BookInput {
   id: string; name: string; author: string; price: number; pages: number;
   genres: string[]; tags: string[]; gore: number; genreLabel: string;
   blurb: string; why: string; whyFor?: Record<string, string>; image: ProductImage;
+  specs?: { label: string; value: string }[]; addon?: boolean;
 }
 
 const book = (b: BookInput): Product => ({
   id: b.id, store: "books", name: b.name, byline: b.author, price: b.price,
   blurb: b.blurb, why: b.why, whyFor: b.whyFor, image: b.image,
-  attrs: { author: b.author, pages: b.pages, genres: b.genres, tags: b.tags, gore: b.gore, giftable: true },
-  specs: [
+  attrs: { author: b.author, pages: b.pages, genres: b.genres, tags: b.tags, gore: b.gore, giftable: true, ...(b.addon ? { addon: true } : {}) },
+  specs: b.specs ?? [
     { label: "Pages", value: String(b.pages) },
     { label: "Genre", value: b.genreLabel },
     { label: "Format", value: "Paperback" },
@@ -110,4 +111,9 @@ export const BOOKS: Product[] = [
     genres: ["literary"], tags: ["reflective"], gore: 0, genreLabel: "Literary fiction",
     blurb: "A night-shift nurse, a city asleep, and the patients who can't.",
     why: "Quietly devastating literary fiction.", image: cover("#F2EEE8", "#333333", "rule") }),
+  book({ id: "b-card", name: "Handwritten card", author: "Written in the shop by a bookseller", price: 2.5, pages: 0,
+    genres: ["gift"], tags: [], gore: 0, genreLabel: "Card",
+    blurb: "A plain card, written by hand in the shop with whatever message you'd like.",
+    why: "A few words in his hands with the book.", image: cover("#F4EDE0", "#7A2E2E", "rule"),
+    specs: [{ label: "Format", value: "Card" }], addon: true }),
 ];

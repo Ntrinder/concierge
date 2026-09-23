@@ -79,6 +79,44 @@ describe("fishing journey — nothing matches", () => {
   });
 });
 
+describe("add to basket — books", () => {
+  it("replay ends on the in-basket card with a chosen compare and card follow-up", () => {
+    const s = replay("books", "warm", 5);
+    const added = lastOf(s, "added")!;
+    expect(added.productId).toBe("b-cartographer");
+    expect(added.options).toEqual(["Paperback", "Gift wrapped"]);
+    expect(added.count).toBe(1);
+    const compare = lastOf(s, "compare")!;
+    expect(compare.chosen).toBe("b-cartographer");
+    expect(s.replies.map((r) => r.label)).toEqual(["Add a card", "No thanks", "Something for me too"]);
+
+    const withCard = send(s, "Add a card");
+    const products = lastOf(withCard, "products")!;
+    expect(products.items.map((i) => i.productId)).toContain("b-card");
+  });
+
+  it("markAdded twice increments the count and only sets chosen on the latest matching compare", () => {
+    let s = replay("books", "warm", 4); // stops right after "Compare the first two"
+    s = markAdded(s, "b-fire-and-salt");
+    s = markAdded(s, "b-cartographer");
+    const added = lastOf(s, "added")!;
+    expect(added.count).toBe(2);
+    const compares = s.messages.filter((m) => m.role === "agent" && m.kind === "compare") as Extract<Message, { kind: "compare" }>[];
+    expect(compares).toHaveLength(1);
+    expect(compares[0]!.chosen).toBe("b-fire-and-salt");
+  });
+});
+
+describe("add to basket — fishing", () => {
+  it("replay ends on the in-basket card with a leader & tippet follow-up", () => {
+    const s = replay("fishing", "terse", 5);
+    const added = lastOf(s, "added")!;
+    expect(added.productId).toBe("f-stillwater-trail");
+    expect(added.options).toEqual([]);
+    expect(s.replies.map((r) => r.label)).toContain("Add a leader & tippet pack");
+  });
+});
+
 describe("voice and fallback", () => {
   it("uses different copy per voice", () => {
     const warm = send(initialState("fishing", "warm"), SCRIPTS.fishing.opening);

@@ -37,17 +37,40 @@ const AFTER_HISTORY: Reply[] = [
 export const books: Script = {
   store: "books",
   opening: OPENING,
-  demoInputs: [OPENING, "Police procedural, like Rankin", CHANGE, "Compare the first two"],
+  demoInputs: [OPENING, "Police procedural, like Rankin", CHANGE, "Compare the first two", { add: "b-cartographer", giftWrap: true }],
   greetingReplies: [{ label: "“A gripping mystery for my dad…”", text: OPENING }],
 
   route(text, state) {
     const t = text.toLowerCase();
     if (state.step === "start") return /mystery|crime|book|dad|read|novel/.test(t) ? "understand" : "fallback";
+    if (state.step === "added") {
+      if (/card/.test(t)) return "card";
+      if (/no thanks|that's all|no$/.test(t)) return "done";
+      if (/for me|myself/.test(t)) return "forMe";
+    }
     if (/gone off|changed? (my|his) mind|instead|history|non-?fiction/.test(t)) return "changeMind";
     if (/compare/.test(t)) return "compare";
     if (/shorter|fewer pages|\d+\s*pages/.test(t)) return "pages";
     if (/surprise/.test(t) || SUBSTYLES.some((s) => s.re.test(t))) return "refine";
     return "fallback";
+  },
+
+  afterAdd(ctx, product) {
+    if (product.id === "b-card") {
+      return {
+        messages: [{ kind: "text", text: ctx.v({ warm: "Done — the card's in your basket too. Tell me what to write whenever you check out.", neutral: "Card added.", terse: "Card added." }) }],
+        replies: [],
+      };
+    }
+    return {
+      messages: [{ kind: "text", text: ctx.v({ warm: "Good choice for him. Shall I add a handwritten card? We'll write whatever you like inside.", neutral: "Added. Want a handwritten card with it?", terse: "Added. Add a card?" }) }],
+      replies: [
+        { label: "Add a card", text: "Add a card" },
+        { label: "No thanks", text: "No thanks" },
+        { label: "Something for me too", text: "Something for me too" },
+      ],
+      step: "added",
+    };
   },
 
   steps: {
@@ -135,6 +158,25 @@ export const books: Script = {
         replies: [],
       };
     },
+
+    card: (ctx) => ({
+      messages: [
+        { kind: "text", text: ctx.v({ warm: "Here it is — tap Add and it'll go in with the book.", neutral: "Here's the card:", terse: "Card:" }) },
+        { kind: "products", mode: "match", items: [{ productId: "b-card", receipts: [] }] },
+      ],
+      replies: [],
+    }),
+
+    done: (ctx) => ({
+      messages: [{ kind: "text", text: ctx.v({ warm: "Lovely. I hope he enjoys it.", neutral: "Great — enjoy.", terse: "Done." }) }],
+      replies: [],
+    }),
+
+    forMe: (ctx) => ({
+      step: "start",
+      messages: [{ kind: "text", text: ctx.v({ warm: "Happily — tell me a little about what you like to read and I'll start a fresh search.", neutral: "Sure — what do you like to read?", terse: "What do you read?" }) }],
+      replies: [],
+    }),
 
     fallback: (ctx) => ({
       step: ctx.state.step,

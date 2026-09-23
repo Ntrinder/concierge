@@ -80,6 +80,14 @@ export function validate(c: Partial<AgentConfig>): string | null {
   const launcher = c.launcher as unknown as Record<string, unknown> | undefined;
   if (!launcher || typeof launcher !== "object" || !oneOf(launcher.position, ENUMS.position)) return "Launcher position must be bottom-right or bottom-left";
   if (launcher.label !== undefined && !isStr(launcher.label, 80)) return "Launcher label must be under 80 characters";
+
+  if (c.basket !== undefined) {
+    if (typeof c.basket !== "object" || Array.isArray(c.basket)) return "Basket links are invalid";
+    const { checkoutUrl, basketUrl } = c.basket as Record<string, unknown>;
+    const validUrl = (v: unknown) => typeof v === "string" && v.length <= 500 && ((v.startsWith("/") && !v.startsWith("//")) || v.startsWith("https://"));
+    if (checkoutUrl !== undefined && !validUrl(checkoutUrl)) return "Checkout URL must be a site-relative path or an https:// link";
+    if (basketUrl !== undefined && !validUrl(basketUrl)) return "Basket URL must be a site-relative path or an https:// link";
+  }
   return null;
 }
 
@@ -99,6 +107,7 @@ function clean(c: AgentConfig, id: string): AgentConfig {
     cardStyle: c.cardStyle,
     agent: { name: c.agent.name, greeting: c.agent.greeting, ...(c.agent.avatar ? { avatar: c.agent.avatar } : {}) },
     launcher: { position: c.launcher.position, ...(c.launcher.label ? { label: c.launcher.label } : {}) },
+    ...(c.basket ? { basket: { ...(c.basket.checkoutUrl ? { checkoutUrl: c.basket.checkoutUrl } : {}), ...(c.basket.basketUrl ? { basketUrl: c.basket.basketUrl } : {}) } } : {}),
   };
 }
 

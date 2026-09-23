@@ -3,7 +3,7 @@ import type { Product } from "../types";
 interface GearInput {
   id: string; name: string; byline: string; price: number; glyph: "rod" | "reel" | "kit";
   flyRod: boolean; beginner: boolean; packedCm: number; lineWeight?: number;
-  specs: [string, string][]; blurb: string; why: string; whyFor?: Record<string, string>;
+  specs: [string, string][]; blurb: string; why: string; whyFor?: Record<string, string>; addon?: boolean;
 }
 
 const gear = (g: GearInput): Product => ({
@@ -12,6 +12,7 @@ const gear = (g: GearInput): Product => ({
   attrs: {
     flyRod: g.flyRod, beginner: g.beginner, packedCm: g.packedCm,
     ...(g.lineWeight !== undefined ? { lineWeight: g.lineWeight } : {}),
+    ...(g.addon ? { addon: true } : {}),
   },
   specs: g.specs.map(([label, value]) => ({ label, value })),
 });
@@ -78,4 +79,9 @@ export const FISHING: Product[] = [
     flyRod: false, beginner: true, packedCm: 9, lineWeight: 4,
     specs: [["Line", "3–4 wt"], ["Arbor", "Large"], ["Weight", "112 g"], ["Drag", "Click & pawl"]],
     blurb: "Simple, light reel to pair with a 3–4 wt rod.", why: "A perfect partner for a small-stream rod." }),
+  gear({ id: "f-leader-tippet", name: "Leader & Tippet Pack 5X", byline: "3 tapered leaders + tippet spool", price: 14, glyph: "kit",
+    flyRod: false, beginner: true, packedCm: 10,
+    specs: [["Contents", "3 leaders + tippet"], ["Size", "5X"], ["Leader", "9 ft"]],
+    blurb: "Three 9 ft tapered leaders and a spool of 5X tippet — what connects your line to the fly.",
+    why: "The bit every new rod needs before you can tie on a fly.", addon: true }),
 ];

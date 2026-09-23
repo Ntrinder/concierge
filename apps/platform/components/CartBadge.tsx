@@ -1,28 +1,41 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
-export function CartBadge({ className, toastClassName, label = "Basket" }: { className?: string; toastClassName?: string; label?: string }) {
+interface BasketItem { productId: string; name: string; price: number; qty: number; options: Record<string, unknown> }
+type AddDetail = { productId: string; name: string; price: number; qty: number; options?: Record<string, unknown> };
+
+const key = (store: "books" | "fishing") => `concierge-basket:${store}`;
+
+function readBasket(store: "books" | "fishing"): BasketItem[] {
+  try {
+    const raw = sessionStorage.getItem(key(store));
+    return raw ? (JSON.parse(raw) as BasketItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeBasket(store: "books" | "fishing", items: BasketItem[]) {
+  try {
+    sessionStorage.setItem(key(store), JSON.stringify(items));
+  } catch {
+    // ignore — private browsing / blocked storage
+  }
+}
+
+export function CartBadge({ className, store, label = "Basket" }: { className?: string; store: "books" | "fishing"; label?: string }) {
   const [count, setCount] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    setCount(readBasket(store).reduce((n, i) => n + i.qty, 0));
     const onAdd = (e: Event) => {
-      const { name, qty } = (e as CustomEvent<{ name: string; qty: number }>).detail;
-      setCount((c) => c + qty);
-      setToast(`Added “${name}” to your basket`);
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      toastTimer.current = setTimeout(() => setToast(null), 3200);
+      const detail = (e as CustomEvent<AddDetail>).detail;
+      const items = [...readBasket(store), { productId: detail.productId, name: detail.name, price: detail.price, qty: detail.qty, options: detail.options ?? {} }];
+      writeBasket(store, items);
+      setCount(items.reduce((n, i) => n + i.qty, 0));
     };
     window.addEventListener("concierge:add-to-cart", onAdd);
-    return () => {
-      window.removeEventListener("concierge:add-to-cart", onAdd);
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-    };
-  }, []);
-  return (
-    <>
-      <span className={className} aria-live="polite">{label} ({count})</span>
-      {toast && <div className={toastClassName} role="status">{toast}</div>}
-    </>
-  );
+    return () => window.removeEventListener("concierge:add-to-cart", onAdd);
+  }, [store]);
+  return <Link href={`/demo/${store}/basket`} className={className} aria-live="polite">{label} ({count})</Link>;
 }

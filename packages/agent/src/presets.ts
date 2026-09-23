@@ -13,6 +13,7 @@ export const DEMO_CONFIGS = {
     shape: "soft", density: "airy", voice: "warm", cardStyle: "visual",
     agent: { name: "Ask a bookseller", avatar: "/demo/marginalia-logo.svg", greeting: "Hello! Looking for something to read — or something to give? Tell me a little about who it's for." },
     launcher: { position: "bottom-right", label: "Ask a bookseller" },
+    basket: { basketUrl: "/demo/books/basket", checkoutUrl: "/demo/books/basket" },
   },
   riffle: {
     id: "riffle", store: "fishing", brand: "#FF5A1F", background: "#101214", surface: "dark",
@@ -20,6 +21,7 @@ export const DEMO_CONFIGS = {
     shape: "square", density: "compact", voice: "terse", cardStyle: "spec",
     agent: { name: "Riffle Guide", avatar: "/demo/riffle-logo.svg", greeting: "Where are you fishing, and what do you need? I'll match the gear." },
     launcher: { position: "bottom-right", label: "Ask a guide" },
+    basket: { basketUrl: "/demo/fishing/basket", checkoutUrl: "/demo/fishing/basket" },
   },
 } satisfies Record<string, AgentConfig>;
 

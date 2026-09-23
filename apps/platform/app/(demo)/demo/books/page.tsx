@@ -18,14 +18,14 @@ function Cover({ p }: { p: Product }) {
 
 export default async function BooksStore({ searchParams }: { searchParams: Promise<{ config?: string }> }) {
   const { config = "marginalia" } = await searchParams;
-  const books = CATALOGS.books;
+  const books = CATALOGS.books.filter((p) => p.attrs.addon !== true);
   return (
     <div className={s.store}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:opsz,wght@9..144,400..600&display=swap" />
       <header className={s.header}>
         <a href="#" className={s.brand}><img src="/demo/marginalia-logo.svg" alt="Marginalia logo" width={36} height={36} /><span>Marginalia</span></a>
         <nav className={s.nav}><a href="#">New in</a><a href="#">Fiction</a><a href="#">History</a><a href="#">Gifts</a></nav>
-        <CartBadge className={s.cart} toastClassName={s.toast} />
+        <CartBadge className={s.cart} store="books" />
       </header>
       <section className={s.hero}>
         <p className={s.eyebrow}>Autumn, chosen by people who read</p>

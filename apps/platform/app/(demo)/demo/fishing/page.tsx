@@ -16,7 +16,7 @@ export default async function FishingStore({ searchParams }: { searchParams: Pro
       <header className={s.header}>
         <a href="#" className={s.brand}><img src="/demo/riffle-logo.svg" alt="Riffle & Co. logo" width={40} height={40} /><span>RIFFLE &amp; CO.</span></a>
         <nav className={s.nav}><a href="#">Rods</a><a href="#">Reels</a><a href="#">Lines</a><a href="#">Packs</a></nav>
-        <CartBadge className={s.cart} toastClassName={s.toast} label="CART" />
+        <CartBadge className={s.cart} store="fishing" label="CART" />
       </header>
       <section className={s.hero}>
         <p className={s.kicker}>FIELD-TESTED / 2026</p>

@@ -19,6 +19,7 @@ export interface AgentConfig {
   cardStyle: CardStyle;
   agent: { name: string; avatar?: string; greeting: string };
   launcher: { position: "bottom-right" | "bottom-left"; label?: string };
+  basket?: { checkoutUrl?: string; basketUrl?: string };
 }
 
 export interface TokenAdjustment { token: string; from: string; to: string; reason: string }
@@ -76,9 +77,9 @@ export type AgentDraft =
   | { kind: "text"; text: string }
   | { kind: "products"; mode: "match" | "near-miss"; items: { productId: string; flag?: string; receipts?: string[] }[] }
   | { kind: "constraint-change"; kept: string[]; dropped: string[]; added: string[] }
-  | { kind: "compare"; productIds: string[] }
+  | { kind: "compare"; productIds: string[]; chosen?: string }
   | { kind: "notify-form"; done?: string }
-  | { kind: "added"; productId: string };
+  | { kind: "added"; productId: string; options: string[]; count: number };
 
 export type Message =
   | { id: string; role: "user"; kind: "text"; text: string }
@@ -94,4 +95,5 @@ export interface ConvState {
   messages: Message[];
   replies: Reply[];
   lastShown: string[];
+  basketCount: number;
 }

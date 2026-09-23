@@ -93,7 +93,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
       detail: { productId: product.id, name: product.name, price: product.price, qty: 1, options: { giftWrap } },
     }));
     setDetail(null);
-    setConv((s) => markAdded(s, product.id));
+    setConv((s) => markAdded(s, product.id, { giftWrap }));
   };
 
   return (

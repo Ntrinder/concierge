@@ -22,13 +22,12 @@ function Glyph({ glyph }: { glyph: "rod" | "reel" | "kit" }) {
   );
 }
 
-export function ProductImageView({ image, product, size }: { image: ProductImage; product: Product; size: "sm" | "lg" }) {
+export function ProductImageView({ image, product, size }: { image: ProductImage; product: Product; size: "xs" | "sm" | "lg" }) {
   if (image.kind === "glyph") return <div class={cls("glyph", `glyph-${size}`)}><Glyph glyph={image.glyph} /></div>;
   // Cover colours are product artwork (data), not theme — inline style is intentional
   return (
     <div class={cls("cover", `cover-${size}`, `motif-${image.motif}`)} style={{ background: image.bg, color: image.fg }} aria-hidden="true">
-      <span class="cover-title">{product.name}</span>
-      <span class="cover-author">{product.byline}</span>
+      {size !== "xs" && <><span class="cover-title">{product.name}</span><span class="cover-author">{product.byline}</span></>}
     </div>
   );
 }

@@ -32,5 +32,14 @@
 .coverTitle { font-family: "Fraunces", serif; font-size: 17px; line-height: 1.1; }
 .coverAuthor { font-size: 12px; opacity: .8; margin-top: 4px; }
 .footer { padding: 32px clamp(16px, 5vw, 64px) 120px; color: var(--muted); border-top: 1px solid var(--line); font-size: 15px; }
-.toast { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); z-index: 10; padding: 10px 20px; border-radius: 999px; background: var(--ink); color: var(--bg); }
+.basket { padding: 56px clamp(16px, 5vw, 64px) 120px; max-width: 640px; min-height: 40vh; }
+.basketHeading { font-family: "Fraunces", serif; font-weight: 500; font-size: 34px; margin: 0 0 28px; }
+.basketRow { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.basketRowName { font-weight: 600; }
+.basketRowOptions { color: var(--muted); font-size: 15px; margin-left: 8px; }
+.basketRowPrice { font-variant-numeric: tabular-nums; }
+.basketTotal { display: flex; justify-content: space-between; padding: 20px 0 0; margin-top: 6px; font-size: 22px; font-family: "Fraunces", serif; }
+.basketEmpty { color: var(--muted); padding: 16px 0 32px; }
+.basketNote { color: var(--muted); font-size: 15px; margin-top: 36px; }
+.basketLink { color: var(--brand); }
 @media (max-width: 640px) { .nav { display: none; } .header { justify-content: space-between; } .hero { padding-top: 48px; } }

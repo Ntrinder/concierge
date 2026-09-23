@@ -32,12 +32,16 @@ const WEIGHT_COPY = {
 export const fishing: Script = {
   store: "fishing",
   opening: OPENING,
-  demoInputs: [OPENING, "Yes, 3–4 weight", "Stretch the budget to €200", "Compare the first two"],
+  demoInputs: [OPENING, "Yes, 3–4 weight", "Stretch the budget to €200", "Compare the first two", { add: "f-stillwater-trail" }],
   greetingReplies: [{ label: "“Beginner fly rod for small streams…”", text: OPENING }],
 
   route(text, state) {
     const t = text.toLowerCase();
     if (state.step === "start") return /rod|fly|stream|hik|fish|reel/.test(t) ? "understand" : "fallback";
+    if (state.step === "added") {
+      if (/leader|tippet/.test(t)) return "leaderPack";
+      if (/no thanks|no$/.test(t)) return "doneAdd";
+    }
     if ((state.step === "understand" || state.step === "explain") && /^(yes|yep|sure|ok)|3.?4|sounds good|go with/.test(t)) return "weight";
     if (/what does|explain|not sure|mean/.test(t)) return "explain";
     if (/tell me when|notify|let me know/.test(t)) return "notify";
@@ -45,6 +49,23 @@ export const fishing: Script = {
     if (/pack size|bigger|longer is fine|doesn'?t (need|have) to pack|relax/.test(t)) return "relaxPack";
     if (/compare/.test(t)) return "compare";
     return "fallback";
+  },
+
+  afterAdd(ctx, product) {
+    if (product.id === "f-leader-tippet") {
+      return {
+        messages: [{ kind: "text", text: ctx.v({ warm: "That's you set — tie on a fly and go.", neutral: "Leader pack added.", terse: "Added." }) }],
+        replies: [],
+      };
+    }
+    return {
+      messages: [{ kind: "text", text: ctx.v({ warm: "Good pick. You'll need a leader and tippet to tie on a fly — want me to add a pack?", neutral: "Added. You'll also need leader and tippet — add a pack?", terse: "Added. Need leader & tippet?" }) }],
+      replies: [
+        { label: "Add a leader & tippet pack", text: "Add a leader & tippet pack" },
+        { label: "No thanks", text: "No thanks" },
+      ],
+      step: "added",
+    };
   },
 
   steps: {
@@ -124,6 +145,19 @@ export const fishing: Script = {
         replies: [],
       };
     },
+
+    leaderPack: (ctx) => ({
+      messages: [
+        { kind: "text", text: ctx.v({ warm: "Here's the pack — it suits a 3–5 wt rod.", neutral: "Leader & tippet pack:", terse: "Pack:" }) },
+        { kind: "products", mode: "match", items: [{ productId: "f-leader-tippet", receipts: [] }] },
+      ],
+      replies: [],
+    }),
+
+    doneAdd: (ctx) => ({
+      messages: [{ kind: "text", text: ctx.v({ warm: "Enjoy the water.", neutral: "Great — enjoy.", terse: "Done." }) }],
+      replies: [],
+    }),
 
     fallback: (ctx) => ({
       step: ctx.state.step,

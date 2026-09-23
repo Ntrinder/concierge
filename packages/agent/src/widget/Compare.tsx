@@ -1,12 +1,33 @@
 import { getProduct } from "../catalogs";
 import type { AgentConfig, Product } from "../types";
+import { cls } from "./cls";
 import { formatPrice, ProductImageView } from "./ProductCard";
 
-export function Compare({ config, productIds, compact, onChoose }: { config: AgentConfig; productIds: string[]; compact: boolean; onChoose: (id: string) => void }) {
+export function Compare({ config, productIds, chosen, compact, onChoose }: { config: AgentConfig; productIds: string[]; chosen?: string; compact: boolean; onChoose: (id: string) => void }) {
   const products = productIds.map((id) => getProduct(config.store, id)).filter((p): p is Product => !!p);
   const labels = [...new Set(products.flatMap((p) => p.specs.map((s) => s.label)))];
   const specOf = (p: Product, label: string) => p.specs.find((s) => s.label === label)?.value ?? "—";
   const mono = config.cardStyle === "spec";
+
+  if (chosen) {
+    return (
+      <div class="compare-done">
+        {products.map((p) => {
+          const isChosen = p.id === chosen;
+          return (
+            <div class={cls("compare-done-row", isChosen ? "is-chosen" : "is-other")} key={p.id}>
+              <ProductImageView image={p.image} product={p} size="xs" />
+              <div class="compare-done-info">
+                <div class="card-name">{p.name}</div>
+                <div class="compare-done-sub">{isChosen ? formatPrice(p.price) : `${formatPrice(p.price)} · compared`}</div>
+              </div>
+              {isChosen && <span class="compare-done-check">✓ Chosen</span>}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   if (compact) {
     return (

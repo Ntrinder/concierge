@@ -17,7 +17,7 @@ export default function Lab() {
         <div className={s.controls}>
           <label><input type="checkbox" checked={narrow} onChange={(e) => setNarrow(e.target.checked)} /> 375px</label>
           <label>Conversation step <select value={step} onChange={(e) => setStep(Number(e.target.value))}>
-            {[0, 1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+            {[0, 1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
           </select></label>
         </div>
       </header>
