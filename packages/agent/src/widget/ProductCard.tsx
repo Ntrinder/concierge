@@ -5,6 +5,12 @@ import { FlagIcon } from "./icons";
 
 export const formatPrice = (n: number) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
 
+const ReceiptCheck = () => (
+  <svg width={12} height={12} viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width={2.2} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="receipt-check">
+    <path d="M2 6.5l2.5 2.3L10 3.5" />
+  </svg>
+);
+
 function Glyph({ glyph }: { glyph: "rod" | "reel" | "kit" }) {
   const common = { fill: "none", stroke: "currentColor", "stroke-width": 1.6, "stroke-linecap": "round" } as const;
   return (
@@ -27,11 +33,25 @@ export function ProductImageView({ image, product, size }: { image: ProductImage
   );
 }
 
-export function ProductCard({ config, product, flag, onOpen }: { config: AgentConfig; product: Product; flag?: string; onOpen: (id: string) => void }) {
-  const spec = config.cardStyle === "spec";
+function Receipts({ receipts }: { receipts: string[] }) {
+  if (!receipts.length) return null;
   return (
-    <button type="button" class={cls("card", spec ? "card-spec" : "card-visual", flag && "is-near-miss")} onClick={() => onOpen(product.id)}
-      aria-label={`${product.name}, ${formatPrice(product.price)}${flag ? `. Note: ${flag}` : ""}. View details`}>
+    <ul class="receipts" aria-label="Matches what you asked for">
+      {receipts.map((r) => <li class="receipt" key={r}><ReceiptCheck />{r}</li>)}
+    </ul>
+  );
+}
+
+export function ProductCard({ config, product, flag, receipts, onOpen, onAdd }: { config: AgentConfig; product: Product; flag?: string; receipts?: string[]; onOpen: (id: string) => void; onAdd: (id: string) => void }) {
+  const spec = config.cardStyle === "spec";
+  const actions = (
+    <>
+      <button type="button" class="btn btn-quiet t-link" aria-label={`Details: ${product.name}`} onClick={() => onOpen(product.id)}>Details</button>
+      <button type="button" class="btn btn-primary t-btn" aria-label={`Add ${product.name} to basket, ${formatPrice(product.price)}`} onClick={() => onAdd(product.id)}>Add</button>
+    </>
+  );
+  return (
+    <article class={cls("card", spec ? "card-spec" : "card-visual", flag && "is-near-miss")} aria-label={product.name}>
       {flag && <span class="flag"><FlagIcon />{flag}</span>}
       {spec ? (
         <>
@@ -46,28 +66,33 @@ export function ProductCard({ config, product, flag, onOpen }: { config: AgentCo
           <dl class="specs">
             {product.specs.slice(0, 6).map((s) => <div class="spec" key={s.label}><dt>{s.label}</dt><dd>{s.value}</dd></div>)}
           </dl>
+          {receipts && <Receipts receipts={receipts} />}
+          <span class="card-foot card-foot-end">{actions}</span>
         </>
       ) : (
-        <span class="card-row">
-          <ProductImageView image={product.image} product={product} size="sm" />
-          <span class="card-head">
-            <span class="card-name">{product.name}</span>
-            <span class="card-byline">{product.byline}</span>
-            <span class="card-why">{product.why}</span>
-            <span class="card-foot"><span class="price">{formatPrice(product.price)}</span><span class="card-cta t-link">Details →</span></span>
+        <>
+          <span class="card-row">
+            <ProductImageView image={product.image} product={product} size="sm" />
+            <span class="card-head">
+              <span class="card-name">{product.name}</span>
+              <span class="card-byline">{product.byline}</span>
+              <span class="card-why">{product.why}</span>
+            </span>
           </span>
-        </span>
+          {receipts && <Receipts receipts={receipts} />}
+          <span class="card-foot"><span class="price">{formatPrice(product.price)}</span>{actions}</span>
+        </>
       )}
-    </button>
+    </article>
   );
 }
 
-export function ProductList({ config, items, mode, onOpen }: { config: AgentConfig; items: { productId: string; flag?: string }[]; mode: "match" | "near-miss"; onOpen: (id: string) => void }) {
+export function ProductList({ config, items, mode, onOpen, onAdd }: { config: AgentConfig; items: { productId: string; flag?: string; receipts?: string[] }[]; mode: "match" | "near-miss"; onOpen: (id: string) => void; onAdd: (id: string) => void }) {
   return (
     <div class={cls("cards", mode === "near-miss" && "cards-near-miss")}>
       {items.map((i) => {
         const p = getProduct(config.store, i.productId);
-        return p ? <ProductCard key={p.id} config={config} product={p} flag={i.flag} onOpen={onOpen} /> : null;
+        return p ? <ProductCard key={p.id} config={config} product={p} flag={i.flag} receipts={i.receipts} onOpen={onOpen} onAdd={onAdd} /> : null;
       })}
     </div>
   );

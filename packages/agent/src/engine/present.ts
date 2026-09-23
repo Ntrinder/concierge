@@ -1,4 +1,5 @@
 import { closestPerConstraint, match } from "../matcher";
+import { receiptsFor } from "../receipts";
 import type { AgentDraft, Constraint, ConvState, Product, Reply, StoreKey, VoiceCopy } from "../types";
 
 export interface Ctx { state: ConvState; products: Product[]; text: string; v: (c: VoiceCopy) => string }
@@ -27,7 +28,7 @@ export function present(ctx: Ctx, constraints: Constraint[], copy: { match: Voic
       lastShown: shown.map((p) => p.id),
       messages: [
         { kind: "text", text: ctx.v(copy.match) },
-        { kind: "products", mode: "match", items: shown.map((p) => ({ productId: p.id })) },
+        { kind: "products", mode: "match", items: shown.map((p) => ({ productId: p.id, receipts: receiptsFor(p, constraints) })) },
       ] as AgentDraft[],
     };
   }
@@ -40,7 +41,7 @@ export function present(ctx: Ctx, constraints: Constraint[], copy: { match: Voic
     lastShown: closest.map((n) => n.product.id),
     messages: [
       { kind: "text", text: ctx.v(copy.none) },
-      { kind: "products", mode: "near-miss", items: closest.map((n) => ({ productId: n.product.id, flag: n.violation.text })) },
+      { kind: "products", mode: "near-miss", items: closest.map((n) => ({ productId: n.product.id, flag: n.violation.text, receipts: receiptsFor(n.product, constraints) })) },
     ] as AgentDraft[],
   };
 }

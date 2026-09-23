@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { differenceEuclidean } from "culori";
 import { contrast, deriveTokens } from "../src/tokens";
-import { DEMO_CONFIGS } from "../src/presets";
+import { DEMO_CONFIGS, LAB_CONFIGS, PRESETS } from "../src/presets";
 import type { AgentConfig } from "../src/types";
 
 const base: AgentConfig = {
@@ -98,6 +98,15 @@ describe("deriveTokens", () => {
   it("respects a custom background", () => {
     const { vars } = deriveTokens({ ...base, background: "#F6F1E7" });
     expect(vars["--c-bg"]).toBe("#f6f1e7");
+  });
+
+  it("gives --c-success at least 3:1 against both --c-surface and --c-bg, for every Lab brand and preset", () => {
+    const configs = [...LAB_CONFIGS, ...Object.values(PRESETS).map((p) => ({ ...base, ...p.config }))];
+    for (const config of configs) {
+      const { vars } = deriveTokens(config);
+      expect(contrast(vars["--c-success"], vars["--c-surface"]), `${config.id || "preset"} vs surface`).toBeGreaterThanOrEqual(3);
+      expect(contrast(vars["--c-success"], vars["--c-bg"]), `${config.id || "preset"} vs bg`).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it("omits --font-body when inheriting the host font", () => {

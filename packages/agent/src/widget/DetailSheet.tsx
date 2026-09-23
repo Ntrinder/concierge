@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { AgentConfig, Product } from "../types";
+import { whyText } from "../receipts";
+import type { AgentConfig, Constraint, Product } from "../types";
 import { BackIcon } from "./icons";
 import { formatPrice, ProductImageView } from "./ProductCard";
 
-export function DetailSheet({ config, product, onBack, onAdd }: { config: AgentConfig; product: Product; onBack: () => void; onAdd: (opts: { giftWrap: boolean }) => void }) {
+export function DetailSheet({ config, product, constraints, onBack, onAdd }: { config: AgentConfig; product: Product; constraints: Constraint[]; onBack: () => void; onAdd: (opts: { giftWrap: boolean }) => void }) {
   const [giftWrap, setGiftWrap] = useState(false);
   const backRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { backRef.current?.focus(); }, []);
@@ -24,7 +25,7 @@ export function DetailSheet({ config, product, onBack, onAdd }: { config: AgentC
             <p class="price sheet-price">{formatPrice(product.price)}</p>
           </div>
         </div>
-        <div class="why-box"><strong>Why this one</strong><p>{product.why}</p></div>
+        <div class="why-box"><strong>Why this one</strong><p>{whyText(product, constraints)}</p></div>
         <p class="sheet-blurb">{product.blurb}</p>
         <dl class={config.cardStyle === "spec" ? "specs" : "detail-list"}>
           {product.specs.map((s) => <div class="spec" key={s.label}><dt>{s.label}</dt><dd>{s.value}</dd></div>)}

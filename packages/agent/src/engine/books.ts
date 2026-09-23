@@ -6,15 +6,15 @@ const CHANGE = "Actually, he's gone off crime lately — he's been reading a lot
 
 const C = {
   mystery: c({ key: "mystery", label: "Mystery", attr: "genres", op: "includes", value: "mystery", hard: true, group: "genre" }),
-  gripping: c({ key: "gripping", label: "Gripping", attr: "tags", op: "includes", value: "gripping", miss: "More slow-burn than gripping" }),
-  gore: c({ key: "gore", label: "Not too gory", attr: "gore", op: "max", value: 1, miss: "Grittier than you'd like" }),
-  pages: c({ key: "pages", label: "Under 400 pages", attr: "pages", op: "max", value: 400, miss: "{actual} pages" }),
+  gripping: c({ key: "gripping", label: "Gripping", attr: "tags", op: "includes", value: "gripping", miss: "More slow-burn than gripping", receipt: "Gripping", receiptRank: 4 }),
+  gore: c({ key: "gore", label: "Not too gory", attr: "gore", op: "max", value: 1, miss: "Grittier than you'd like", receipt: "Not gory", receiptRank: 2 }),
+  pages: c({ key: "pages", label: "Under 400 pages", attr: "pages", op: "max", value: 400, miss: "{actual} pages", receipt: "{actual} pages", receiptRank: 1 }),
   notRankin: c({ key: "notRankin", label: "Not Rankin", attr: "author", op: "excludes", value: "Ian Rankin", hard: true, group: "genre" }),
-  procedural: c({ key: "procedural", label: "Police procedural", attr: "genres", op: "includes", value: "police-procedural", hard: true, group: "genre" }),
-  historical: c({ key: "historical", label: "Historical", attr: "genres", op: "includes", value: "historical", hard: true, group: "genre" }),
-  nordic: c({ key: "nordic", label: "Nordic", attr: "genres", op: "includes", value: "nordic", hard: true, group: "genre" }),
-  cosy: c({ key: "cosy", label: "Cosy", attr: "genres", op: "includes", value: "cosy", hard: true, group: "genre" }),
-  history: c({ key: "history", label: "History", attr: "genres", op: "includes", value: "history", hard: true, group: "genre" }),
+  procedural: c({ key: "procedural", label: "Police procedural", attr: "genres", op: "includes", value: "police-procedural", hard: true, group: "genre", receipt: "Police procedural", receiptRank: 3 }),
+  historical: c({ key: "historical", label: "Historical", attr: "genres", op: "includes", value: "historical", hard: true, group: "genre", receipt: "Historical", receiptRank: 3 }),
+  nordic: c({ key: "nordic", label: "Nordic", attr: "genres", op: "includes", value: "nordic", hard: true, group: "genre", receipt: "Nordic", receiptRank: 3 }),
+  cosy: c({ key: "cosy", label: "Cosy", attr: "genres", op: "includes", value: "cosy", hard: true, group: "genre", receipt: "Cosy", receiptRank: 3 }),
+  history: c({ key: "history", label: "History", attr: "genres", op: "includes", value: "history", hard: true, group: "genre", receipt: "History", receiptRank: 3 }),
 };
 const SUBSTYLES = [
   { re: /procedural|like rankin|rankin-?like/, c: C.procedural },

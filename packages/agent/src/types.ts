@@ -38,6 +38,8 @@ export interface Product {
   price: number;
   blurb: string;
   why: string;
+  /** "Why this one" text keyed by constraint key, used instead of `why` when that constraint is active */
+  whyFor?: Record<string, string>;
   attrs: Record<string, AttrValue>;
   specs: { label: string; value: string }[];
   image: ProductImage;
@@ -54,6 +56,10 @@ export interface Constraint {
   group?: string;
   /** near-miss text template: {actual} {limit} {over} */
   miss?: string;
+  /** receipt pill text when a product satisfies this constraint; {actual} = product value. No template → no pill. */
+  receipt?: string;
+  /** lower shows first; default 9 */
+  receiptRank?: number;
   status: "active" | "dropped";
   /** turn number when this constraint was added or dropped (set by the engine) */
   changedAt?: number;
@@ -68,7 +74,7 @@ export type VoiceCopy = Record<Voice, string>;
 
 export type AgentDraft =
   | { kind: "text"; text: string }
-  | { kind: "products"; mode: "match" | "near-miss"; items: { productId: string; flag?: string }[] }
+  | { kind: "products"; mode: "match" | "near-miss"; items: { productId: string; flag?: string; receipts?: string[] }[] }
   | { kind: "constraint-change"; kept: string[]; dropped: string[]; added: string[] }
   | { kind: "compare"; productIds: string[] }
   | { kind: "notify-form"; done?: string }

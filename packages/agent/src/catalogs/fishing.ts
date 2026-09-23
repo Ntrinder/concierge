@@ -3,12 +3,12 @@ import type { Product } from "../types";
 interface GearInput {
   id: string; name: string; byline: string; price: number; glyph: "rod" | "reel" | "kit";
   flyRod: boolean; beginner: boolean; packedCm: number; lineWeight?: number;
-  specs: [string, string][]; blurb: string; why: string;
+  specs: [string, string][]; blurb: string; why: string; whyFor?: Record<string, string>;
 }
 
 const gear = (g: GearInput): Product => ({
   id: g.id, store: "fishing", name: g.name, byline: g.byline, price: g.price,
-  blurb: g.blurb, why: g.why, image: { kind: "glyph", glyph: g.glyph },
+  blurb: g.blurb, why: g.why, whyFor: g.whyFor, image: { kind: "glyph", glyph: g.glyph },
   attrs: {
     flyRod: g.flyRod, beginner: g.beginner, packedCm: g.packedCm,
     ...(g.lineWeight !== undefined ? { lineWeight: g.lineWeight } : {}),
@@ -21,17 +21,20 @@ export const FISHING: Product[] = [
     flyRod: true, beginner: true, packedCm: 58, lineWeight: 4,
     specs: [["Length", "7'6\""], ["Line", "4 wt"], ["Pieces", "4"], ["Packed", "58 cm"], ["Weight", "78 g"], ["Action", "Medium"]],
     blurb: "A forgiving medium-action 4 wt that breaks into four and rides in a daypack side pocket. Lifetime warranty.",
-    why: "Ticks every box on the water — it just costs more." }),
+    why: "Ticks every box on the water — it just costs more.",
+    whyFor: { weight: "A 4 wt that packs to 58 cm for the hike in, with a medium action that forgives a beginner's timing." } }),
   gear({ id: "f-headwater", name: "Headwater 7'6\" 3wt", byline: "4-piece fly rod · medium-slow action", price: 189, glyph: "rod",
     flyRod: true, beginner: true, packedCm: 56, lineWeight: 3,
     specs: [["Length", "7'6\""], ["Line", "3 wt"], ["Pieces", "4"], ["Packed", "56 cm"], ["Weight", "72 g"], ["Action", "Med-slow"]],
     blurb: "Delicate 3 wt for tiny brooks. Slow enough to feel every cast load.",
-    why: "The most delicate option — lovely on very small water." }),
+    why: "The most delicate option — lovely on very small water.",
+    whyFor: { weight: "A 3 wt that packs to 56 cm — the most delicate option here, lovely on very small, clear streams." } }),
   gear({ id: "f-brookline", name: "Brookline 7' 4wt", byline: "3-piece fly rod · medium action", price: 129, glyph: "rod",
     flyRod: true, beginner: true, packedCm: 85, lineWeight: 4,
     specs: [["Length", "7'0\""], ["Line", "4 wt"], ["Pieces", "3"], ["Packed", "85 cm"], ["Weight", "80 g"], ["Action", "Medium"]],
     blurb: "Short, light and easy to cast under trees. Three pieces, so it packs longer.",
-    why: "Right weight, right price — straps to the outside of a pack." }),
+    why: "Right weight, right price — straps to the outside of a pack.",
+    whyFor: { weight: "The right weight at €129 — but it packs to 85 cm, so it rides on the outside of your pack." } }),
   gear({ id: "f-pocketwater", name: "Pocketwater 6'6\" 3wt", byline: "3-piece fly rod · medium action", price: 139, glyph: "rod",
     flyRod: true, beginner: true, packedCm: 88, lineWeight: 3,
     specs: [["Length", "6'6\""], ["Line", "3 wt"], ["Pieces", "3"], ["Packed", "88 cm"], ["Weight", "70 g"], ["Action", "Medium"]],
@@ -41,7 +44,8 @@ export const FISHING: Product[] = [
     flyRod: true, beginner: true, packedCm: 55, lineWeight: 5,
     specs: [["Length", "8'6\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "55 cm"], ["Weight", "96 g"], ["Includes", "Reel + line"]],
     blurb: "Everything you need in one case: rod, reel, backing and floating line.",
-    why: "Complete and packable, but a 5 wt is more than tight streams need." }),
+    why: "Complete and packable, but a 5 wt is more than tight streams need.",
+    whyFor: { weight: "Everything's in the box, so you're fishing on day one. A 5 weight is a little heavy for tiny streams but forgiving to learn on." } }),
   gear({ id: "f-upstream-pro", name: "Upstream Pro 7'9\" 4wt", byline: "4-piece fly rod · fast action", price: 349, glyph: "rod",
     flyRod: true, beginner: false, packedCm: 62, lineWeight: 4,
     specs: [["Length", "7'9\""], ["Line", "4 wt"], ["Pieces", "4"], ["Packed", "62 cm"], ["Weight", "68 g"], ["Action", "Fast"]],

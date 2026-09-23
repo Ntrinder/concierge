@@ -5,10 +5,10 @@ const OPENING = "Need a beginner fly rod for small streams, packs down small eno
 
 const C = {
   flyRod: c({ key: "flyRod", label: "Fly rod", attr: "flyRod", op: "eq", value: true, hard: true }),
-  beginner: c({ key: "beginner", label: "Beginner-friendly", attr: "beginner", op: "eq", value: true, miss: "Built for experienced casters" }),
-  packable: c({ key: "packable", label: "Packs ≤ 60 cm", attr: "packedCm", op: "max", value: 60, miss: "Packs to {actual} cm" }),
+  beginner: c({ key: "beginner", label: "Beginner-friendly", attr: "beginner", op: "eq", value: true, miss: "Built for experienced casters", receipt: "Beginner-friendly", receiptRank: 2 }),
+  packable: c({ key: "packable", label: "Packs ≤ 60 cm", attr: "packedCm", op: "max", value: 60, miss: "Packs to {actual} cm", receipt: "{actual} cm packed", receiptRank: 1 }),
   budget: c({ key: "budget", label: "Under €150", attr: "price", op: "max", value: 150, miss: "€{over} over budget" }),
-  weight: c({ key: "weight", label: "3–4 wt", attr: "lineWeight", op: "max", value: 4, miss: "{actual} wt — heavier than ideal for small streams" }),
+  weight: c({ key: "weight", label: "3–4 wt", attr: "lineWeight", op: "max", value: 4, miss: "{actual} wt — heavier than ideal for small streams", receipt: "{actual} wt", receiptRank: 1 }),
 };
 
 const NEAR_MISS_REPLIES: Reply[] = [

@@ -170,6 +170,7 @@ export function deriveTokens(config: AgentConfig): TokenResult {
   const flagBg = hex({ l: bg.l + (isDark ? 0.14 : -0.09), c: Math.min(b.c, isDark ? 0.07 : 0.05), h: b.h });
   const flagText = ensureContrast(text, flagBg, 4.5);
   const focus = ensureContrast(brand, bgHex, 3);
+  const success = ensureContrastAll(hex({ l: isDark ? 0.8 : 0.5, c: 0.12, h: 145 }), [surface, bgHex], 3);
 
   const r = RADII[config.shape];
   const s = SPACE[config.density];
@@ -194,6 +195,7 @@ export function deriveTokens(config: AgentConfig): TokenResult {
     "--c-flag-bg": flagBg,
     "--c-flag-text": flagText,
     "--c-focus": focus,
+    "--c-success": success,
     "--shadow": isDark ? "0 16px 48px rgb(0 0 0 / 0.55)" : "0 16px 48px rgb(20 20 30 / 0.16)",
     "--r-sm": r.sm, "--r-md": r.md, "--r-lg": r.lg, "--r-btn": r.btn,
     "--fs-xs": `${f[0]}px`, "--fs-sm": `${f[1]}px`, "--fs-md": `${f[2]}px`, "--fs-lg": `${f[3]}px`, "--fs-xl": `${f[4]}px`,

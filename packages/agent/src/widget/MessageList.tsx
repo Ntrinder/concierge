@@ -14,6 +14,7 @@ interface Props {
   animateFrom: number;
   onOpen: (id: string) => void;
   onChoose: (id: string) => void;
+  onAdd: (id: string) => void;
   onNotify: (messageId: string, email: string) => void;
 }
 
@@ -22,7 +23,7 @@ function Words({ text, animate }: { text: string; animate: boolean }) {
   return <>{text.split(/(\s+)/).map((w, i) => (/\s+/.test(w) ? w : <span key={i} class="word" style={{ animationDelay: `${i * 14}ms` }}>{w}</span>))}</>;
 }
 
-export function MessageList({ config, messages, visible, typing, compact, animateFrom, onOpen, onChoose, onNotify }: Props) {
+export function MessageList({ config, messages, visible, typing, compact, animateFrom, onOpen, onChoose, onAdd, onNotify }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -48,7 +49,7 @@ export function MessageList({ config, messages, visible, typing, compact, animat
               </div>
             );
           case "products":
-            return <div key={m.id} class="msg msg-rich"><ProductList config={config} items={m.items} mode={m.mode} onOpen={onOpen} /></div>;
+            return <div key={m.id} class="msg msg-rich"><ProductList config={config} items={m.items} mode={m.mode} onOpen={onOpen} onAdd={onAdd} /></div>;
           case "constraint-change":
             return (
               <div key={m.id} class="msg msg-rich change" role="group" aria-label="What changed">

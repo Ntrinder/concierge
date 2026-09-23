@@ -56,9 +56,9 @@ describe("fishing journey — nothing matches", () => {
     const nm = lastOf(s, "products")!;
     expect(nm.mode).toBe("near-miss");
     expect(nm.items).toEqual([
-      { productId: "f-stillwater-trail", flag: "€29 over budget" },
-      { productId: "f-trailhead-kit", flag: "5 wt — heavier than ideal for small streams" },
-      { productId: "f-brookline", flag: "Packs to 85 cm" },
+      { productId: "f-stillwater-trail", flag: "€29 over budget", receipts: ["58 cm packed", "4 wt", "Beginner-friendly"] },
+      { productId: "f-trailhead-kit", flag: "5 wt — heavier than ideal for small streams", receipts: ["55 cm packed", "Beginner-friendly"] },
+      { productId: "f-brookline", flag: "Packs to 85 cm", receipts: ["4 wt", "Beginner-friendly"] },
     ]);
     s = send(s, "Stretch the budget to €200");
     expect(active(s)).toContain("Under €200");

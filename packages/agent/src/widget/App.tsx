@@ -87,6 +87,15 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
   const busy = visible < conv.messages.length;
   const placeholder = conv.messages.length === 0 ? "Tell me what you're looking for…" : "Reply or ask something else…";
 
+  const addToBasket = (product: ReturnType<typeof getProduct>, { giftWrap }: { giftWrap: boolean }) => {
+    if (!product) return;
+    window.dispatchEvent(new CustomEvent("concierge:add-to-cart", {
+      detail: { productId: product.id, name: product.name, price: product.price, qty: 1, options: { giftWrap } },
+    }));
+    setDetail(null);
+    setConv((s) => markAdded(s, product.id));
+  };
+
   return (
     <>
       <style>{styles}</style>
@@ -112,6 +121,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
                 animateFrom={initialCount}
                 onOpen={setDetail}
                 onChoose={setDetail}
+                onAdd={(id) => addToBasket(getProduct(config.store, id), { giftWrap: false })}
                 onNotify={(id, email) => setConv((s) => submitNotify(s, id, email))}
               />
               <Composer replies={conv.replies} busy={busy} placeholder={placeholder} onSend={say} />
@@ -122,14 +132,9 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
                   <DetailSheet
                     config={config}
                     product={product}
+                    constraints={conv.constraints}
                     onBack={() => setDetail(null)}
-                    onAdd={({ giftWrap }) => {
-                      window.dispatchEvent(new CustomEvent("concierge:add-to-cart", {
-                        detail: { productId: product.id, name: product.name, price: product.price, qty: 1, options: { giftWrap } },
-                      }));
-                      setDetail(null);
-                      setConv((s) => markAdded(s, product.id));
-                    }}
+                    onAdd={(opts) => addToBasket(product, opts)}
                   />
                 );
               })()}
