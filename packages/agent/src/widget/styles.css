@@ -187,7 +187,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .card-spec .receipt { font-family: var(--font-mono); }
 .card-foot { display: flex; align-items: center; gap: var(--s-2); }
 .card-foot-end { justify-content: flex-end; }
-.price { flex-grow: 1; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card-foot .price { flex-grow: 1; }
+.price { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .btn-quiet { background: transparent; border: 1px solid var(--c-border); color: var(--c-link); }
 .btn-quiet:hover { background: var(--c-surface); }
 .card .btn { min-height: 44px; padding: 0 var(--s-3); font-size: var(--fs-md); }
