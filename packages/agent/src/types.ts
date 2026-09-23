@@ -67,6 +67,12 @@ export interface Constraint {
   bend?: string;
   /** chip label after bending a numeric limit to {value} */
   relabel?: string;
+  /** compact summary text; {value} = current value. Empty string = omit from the summary. Fallback: label lowercased */
+  short?: string;
+  /** replaces `short` after bendConstraint changes the value */
+  shortBent?: string;
+  /** order in the summary, lower first; default 9 */
+  shortRank?: number;
   status: "active" | "dropped";
   /** turn number when this constraint was added or dropped (set by the engine) */
   changedAt?: number;

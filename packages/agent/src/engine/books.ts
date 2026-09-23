@@ -5,17 +5,17 @@ const OPENING = "Looking for a gripping mystery for my dad. He's read all of Ran
 const CHANGE = "Actually, he's gone off crime lately — he's been reading a lot of history";
 
 const C = {
-  mystery: c({ key: "mystery", label: "Mystery", attr: "genres", op: "includes", value: "mystery", hard: true, group: "genre" }),
-  gripping: c({ key: "gripping", label: "Gripping", attr: "tags", op: "includes", value: "gripping", miss: "More slow-burn than gripping", receipt: "Gripping", receiptRank: 4, bend: "more slow-burn than gripping" }),
-  gore: c({ key: "gore", label: "Not too gory", attr: "gore", op: "max", value: 1, miss: "Grittier than you'd like", receipt: "Not gory", receiptRank: 2, bend: "grittier than you'd like" }),
+  mystery: c({ key: "mystery", label: "Mystery", attr: "genres", op: "includes", value: "mystery", hard: true, group: "genre", short: "mystery", shortRank: 1 }),
+  gripping: c({ key: "gripping", label: "Gripping", attr: "tags", op: "includes", value: "gripping", miss: "More slow-burn than gripping", receipt: "Gripping", receiptRank: 4, bend: "more slow-burn than gripping", short: "gripping", shortRank: 2 }),
+  gore: c({ key: "gore", label: "Not too gory", attr: "gore", op: "max", value: 1, miss: "Grittier than you'd like", receipt: "Not gory", receiptRank: 2, bend: "grittier than you'd like", short: "not gory", shortRank: 3 }),
   pages: c({ key: "pages", label: "Under 400 pages", attr: "pages", op: "max", value: 400, miss: "{actual} pages", receipt: "{actual} pages", receiptRank: 1,
-    cell: { label: "Pages", pass: "{actual} ✓", fail: "{actual} ≠ <{limit}", rank: 1 }, bend: "{actual} pages · a longer read", relabel: "Under {value} pages" }),
-  notRankin: c({ key: "notRankin", label: "Not Rankin", attr: "author", op: "excludes", value: "Ian Rankin", hard: true, group: "genre" }),
-  procedural: c({ key: "procedural", label: "Police procedural", attr: "genres", op: "includes", value: "police-procedural", hard: true, group: "genre", receipt: "Police procedural", receiptRank: 3 }),
-  historical: c({ key: "historical", label: "Historical", attr: "genres", op: "includes", value: "historical", hard: true, group: "genre", receipt: "Historical", receiptRank: 3 }),
-  nordic: c({ key: "nordic", label: "Nordic", attr: "genres", op: "includes", value: "nordic", hard: true, group: "genre", receipt: "Nordic", receiptRank: 3 }),
-  cosy: c({ key: "cosy", label: "Cosy", attr: "genres", op: "includes", value: "cosy", hard: true, group: "genre", receipt: "Cosy", receiptRank: 3 }),
-  history: c({ key: "history", label: "History", attr: "genres", op: "includes", value: "history", hard: true, group: "genre", receipt: "History", receiptRank: 3 }),
+    cell: { label: "Pages", pass: "{actual} ✓", fail: "{actual} ≠ <{limit}", rank: 1 }, bend: "{actual} pages · a longer read", relabel: "Under {value} pages", short: "under {value} pp", shortRank: 4 }),
+  notRankin: c({ key: "notRankin", label: "Not Rankin", attr: "author", op: "excludes", value: "Ian Rankin", hard: true, group: "genre", short: "not Rankin", shortRank: 5 }),
+  procedural: c({ key: "procedural", label: "Police procedural", attr: "genres", op: "includes", value: "police-procedural", hard: true, group: "genre", receipt: "Police procedural", receiptRank: 3, short: "procedural", shortRank: 1 }),
+  historical: c({ key: "historical", label: "Historical", attr: "genres", op: "includes", value: "historical", hard: true, group: "genre", receipt: "Historical", receiptRank: 3, short: "historical", shortRank: 1 }),
+  nordic: c({ key: "nordic", label: "Nordic", attr: "genres", op: "includes", value: "nordic", hard: true, group: "genre", receipt: "Nordic", receiptRank: 3, short: "nordic", shortRank: 1 }),
+  cosy: c({ key: "cosy", label: "Cosy", attr: "genres", op: "includes", value: "cosy", hard: true, group: "genre", receipt: "Cosy", receiptRank: 3, short: "cosy", shortRank: 1 }),
+  history: c({ key: "history", label: "History", attr: "genres", op: "includes", value: "history", hard: true, group: "genre", receipt: "History", receiptRank: 3, short: "history", shortRank: 1 }),
 };
 const SUBSTYLES = [
   { re: /procedural|like rankin|rankin-?like/, c: C.procedural },
@@ -40,6 +40,7 @@ export const books: Script = {
   opening: OPENING,
   demoInputs: [OPENING, "Police procedural, like Rankin", CHANGE, "Compare the first two", { add: "b-cartographer", giftWrap: true }],
   greetingReplies: [{ label: "“A gripping mystery for my dad…”", text: OPENING }],
+  stripLabel: "For dad:",
 
   route(text, state) {
     const t = text.toLowerCase();
@@ -93,7 +94,6 @@ export const books: Script = {
         { label: "Police procedural, like Rankin", text: "Police procedural, like Rankin" },
         { label: "Historical", text: "Historical" },
         { label: "Nordic", text: "Nordic" },
-        { label: "Surprise me", text: "Surprise me" },
       ],
     }),
 

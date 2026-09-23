@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { getProduct } from "../catalogs";
 import { bendConstraint, markAdded, removeConstraint, replay, send, submitNotify } from "../engine/engine";
+import { SCRIPTS } from "../engine";
 import { varsToCss } from "../tokens";
 import type { AgentConfig } from "../types";
 import styles from "./styles.css?inline";
@@ -111,7 +112,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
           <div class="panel" role="dialog" aria-label={config.agent.name}>
             <Header config={config} onClose={close} />
             <div class="body">
-              <ConstraintStrip constraints={strip.constraints} turn={strip.turn} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
+              <ConstraintStrip constraints={strip.constraints} turn={strip.turn} compact={compact} stripLabel={SCRIPTS[config.store].stripLabel} cardStyle={config.cardStyle} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
               <MessageList
                 config={config}
                 messages={conv.messages}

@@ -9,6 +9,8 @@ export interface Script {
   opening: string;
   demoInputs: (string | { add: string; giftWrap?: boolean })[];
   greetingReplies: Reply[];
+  /** label on the collapsed constraint line at ≤480px, e.g. "For dad:" / "Spec" */
+  stripLabel: string;
   route(text: string, state: ConvState): string;
   steps: Record<string, (ctx: Ctx) => TurnOutput>;
   afterAdd?(ctx: Ctx, product: Product): { messages: AgentDraft[]; replies: Reply[]; step?: string };

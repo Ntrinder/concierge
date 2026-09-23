@@ -68,7 +68,12 @@ export function bendConstraint(state: ConvState, key: string, productId: string)
   const actual = product ? attrOf(product, target.attr) : undefined;
   const constraints =
     (target.op === "max" || target.op === "min") && typeof actual === "number"
-      ? upsert(state.constraints, { ...target, value: actual, label: target.relabel ? fill(target.relabel, { ...target, value: actual }, actual) : target.label })
+      ? upsert(state.constraints, {
+          ...target,
+          value: actual,
+          label: target.relabel ? fill(target.relabel, { ...target, value: actual }, actual) : target.label,
+          short: target.shortBent ?? target.short,
+        })
       : drop(state.constraints, (x) => x.key === key);
 
   // Disable the bend rows on the near-miss message that offered this trade-off
