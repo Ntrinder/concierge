@@ -165,7 +165,9 @@ export function deriveTokens(config: AgentConfig): TokenResult {
   const accent = config.accent ? formatHex(parse(config.accent)!) : hex({ ...b, h: (b.h + 40) % 360 });
   const onAccent = bestOn(accent);
 
-  const flagBg = toward(0.09);
+  // Near-miss flag: tinted with the brand hue (like brandSoft) and pushed further
+  // from --c-surface than a neutral step, so it reads as a callout on dark cards too.
+  const flagBg = hex({ l: bg.l + (isDark ? 0.14 : -0.09), c: Math.min(b.c, isDark ? 0.07 : 0.05), h: b.h });
   const flagText = ensureContrast(text, flagBg, 4.5);
   const focus = ensureContrast(brand, bgHex, 3);
 

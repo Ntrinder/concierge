@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { differenceEuclidean } from "culori";
 import { contrast, deriveTokens } from "../src/tokens";
+import { DEMO_CONFIGS } from "../src/presets";
 import type { AgentConfig } from "../src/types";
 
 const base: AgentConfig = {
@@ -76,6 +78,22 @@ describe("deriveTokens", () => {
       }
     }
   }
+
+  // The near-miss flag must read as a callout, not just a slightly different card.
+  const oklabDistance = differenceEuclidean("oklab");
+  for (const surface of ["light", "dark"] as const) {
+    it(`separates the near-miss flag from the card surface (${surface})`, () => {
+      for (const brand of AWKWARD) {
+        const { vars } = deriveTokens({ ...base, brand, surface });
+        expect(oklabDistance(vars["--c-flag-bg"], vars["--c-surface"]), brand).toBeGreaterThanOrEqual(0.05);
+      }
+    });
+  }
+  it("gives the Riffle near-miss flag a clearly tinted background on dark", () => {
+    const { vars } = deriveTokens(DEMO_CONFIGS.riffle);
+    expect(oklabDistance(vars["--c-flag-bg"], vars["--c-surface"])).toBeGreaterThanOrEqual(0.1);
+    expect(contrast(vars["--c-flag-text"], vars["--c-flag-bg"])).toBeGreaterThanOrEqual(4.5);
+  });
 
   it("respects a custom background", () => {
     const { vars } = deriveTokens({ ...base, background: "#F6F1E7" });
