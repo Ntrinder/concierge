@@ -135,3 +135,17 @@
   .side { border-left: 0; border-top: 1px solid var(--line); }
   .stagePhone { transform: scale(.8); transform-origin: top center; }
 }
+.install { max-width: 760px; margin: 0 auto; padding: 64px 20px 96px; display: grid; gap: 20px; }
+.install .h1, .install .lede { margin-bottom: 0; }
+.snippet { display: flex; gap: 12px; align-items: center; padding: 16px; background: #16161a; color: #f4f4ef; border-radius: 14px; }
+.snippet code { flex: 1; min-width: 0; font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.snippet .primary { background: #f4f4ef; color: #16161a; flex: none; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: none; padding: 10px 12px; font-size: 14px; color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--ink); }
+.tabPanel { font-size: 15px; }
+.tabPanel ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.tryLive { padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.tryLive p { margin: 6px 0 0; }
+.secondary { justify-self: start; height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer; }
+@media (max-width: 640px) { .snippet { flex-direction: column; align-items: stretch; } }
