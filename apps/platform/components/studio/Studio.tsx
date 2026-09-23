@@ -2,6 +2,7 @@
 import { useReducer } from "react";
 import { initialStudio, studioReducer } from "./state";
 import { StepStart } from "./StepStart";
+import { StepTune } from "./StepTune";
 import s from "./studio.module.css";
 
 const STEPS = ["Match your store", "Tune it", "Add it to your site"] as const;
@@ -28,7 +29,8 @@ export function Studio() {
         <a className={s.toplink} href="/lab">Lab</a>
       </header>
       {state.step === 1 && <StepStart dispatch={dispatch} />}
-      {/* Task 13: step 2 — StepTune; Task 14: step 3 — StepInstall */}
+      {state.step === 2 && <StepTune state={state} dispatch={dispatch} />}
+      {/* Task 14: step 3 — StepInstall */}
     </div>
   );
 }
