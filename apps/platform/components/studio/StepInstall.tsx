@@ -162,7 +162,8 @@ export function StepInstall({ state, dispatch }: { state: StudioState; dispatch:
       {status === "saved" && id && (
         <>
           <div className={s.snippet}>
-            <code ref={codeRef}>{snippet}</code>
+            {/* Each attribute is unbreakable, so the tag only wraps at the spaces between attributes */}
+            <code ref={codeRef}>{snippet.split(" ").map((part, i) => <span key={i}>{i > 0 && " "}<span className={s.nowrap}>{part}</span></span>)}</code>
             <button type="button" className={s.primary} onClick={copy}>{copyStatus === "copied" ? "Copied ✓" : "Copy snippet"}</button>
           </div>
           <span className={s.srOnly} role="status" aria-live="polite">
