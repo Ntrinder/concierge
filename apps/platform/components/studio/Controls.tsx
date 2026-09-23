@@ -1,5 +1,5 @@
 "use client";
-import type { Dispatch, FocusEvent, ReactNode } from "react";
+import { useEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
 import { googleFontUrl, type AgentConfig, type CardStyle, type Density, type Shape, type Voice } from "@concierge/agent/core";
 import { FONT_CHOICES } from "@/lib/fonts";
 import { isDarkHex, type Action, type StudioState } from "./state";
@@ -10,10 +10,106 @@ const VOICES: [Voice, string, string][] = [
   ["neutral", "Neutral", "“Here are three options that fit what you asked for.”"],
   ["terse", "Straight to it", "“3 matches. Sorted by fit.”"],
 ];
-const HEX = /^#[0-9a-f]{6}$/i;
+const FONT_URL_PREFIX = "https://fonts.googleapis.com/";
+
+/** Accepts a 3- or 6-digit hex, with or without a leading "#"; returns a normalised "#rrggbb" or null. */
+function normalizeHex(raw: string): string | null {
+  const body = raw.trim().replace(/^#/, "");
+  if (/^[0-9a-f]{6}$/i.test(body)) return `#${body.toLowerCase()}`;
+  if (/^[0-9a-f]{3}$/i.test(body)) return `#${body.toLowerCase().split("").map((c) => c + c).join("")}`;
+  return null;
+}
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return <fieldset className={s.group}><legend>{title}</legend>{children}</fieldset>;
+}
+
+/**
+ * Controlled hex input backed by local draft state, so partial input while typing
+ * doesn't get clobbered by the resync-from-config effect. Valid drafts patch the
+ * config immediately (normalised); invalid/partial drafts just show a hint. The
+ * draft resyncs from `value` whenever it changes elsewhere (swatches, colour
+ * picker, surface toggle) as long as the field isn't focused.
+ */
+function HexField({ id, label, description, value, allowClear, placeholder, onCommit }: {
+  id: string;
+  label: string;
+  description?: string;
+  value: string | undefined;
+  allowClear: boolean;
+  placeholder: string;
+  onCommit: (v: string | undefined) => void;
+}) {
+  const [draft, setDraft] = useState(value ?? "");
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setDraft(value ?? "");
+  }, [value]);
+
+  const invalid = draft.trim() !== "" && normalizeHex(draft) === null;
+
+  return (
+    <>
+      <label className={s.label} htmlFor={id}>{label}</label>
+      {description && <p className={s.hint}>{description}</p>}
+      <input
+        id={id}
+        className={s.input}
+        value={draft}
+        placeholder={placeholder}
+        onFocus={() => { focused.current = true; }}
+        onChange={(e) => {
+          const v = e.target.value;
+          setDraft(v);
+          const normalized = normalizeHex(v);
+          if (normalized) { onCommit(normalized); return; }
+          if (v.trim() === "" && allowClear) onCommit(undefined);
+        }}
+        onBlur={() => {
+          focused.current = false;
+          const normalized = normalizeHex(draft);
+          if (normalized) setDraft(normalized);
+          else if (draft.trim() !== "") setDraft(value ?? "");
+        }}
+      />
+      {invalid && <p className={s.hintWarn}>Use a hex code like #FFFFFF</p>}
+    </>
+  );
+}
+
+/** Controlled font-stylesheet URL input; only patches when the value is a valid Google Fonts URL. */
+function FontUrlField({ value, onCommit }: { value: string | undefined; onCommit: (v: string | undefined) => void }) {
+  const [draft, setDraft] = useState(value ?? "");
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setDraft(value ?? "");
+  }, [value]);
+
+  const invalid = draft.trim() !== "" && !draft.trim().startsWith(FONT_URL_PREFIX);
+
+  return (
+    <>
+      <label className={s.label} htmlFor="fonturl">Custom font stylesheet URL</label>
+      <input
+        id="fonturl"
+        className={s.input}
+        value={draft}
+        placeholder="https://fonts.googleapis.com/…"
+        onFocus={() => { focused.current = true; }}
+        onChange={(e) => {
+          const v = e.target.value;
+          setDraft(v);
+          const t = v.trim();
+          if (t === "") { onCommit(undefined); return; }
+          if (t.startsWith(FONT_URL_PREFIX)) onCommit(t);
+        }}
+        onBlur={() => { focused.current = false; }}
+      />
+      {invalid && <p className={s.hintWarn}>Must be a Google Fonts stylesheet URL (https://fonts.googleapis.com/…)</p>}
+    </>
+  );
 }
 
 function Thumbs<T extends string>({ label, value, options, onChange, render }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void; render: (v: T) => ReactNode }) {
@@ -36,22 +132,6 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
     patch({ font: { family, ...(display ? { display } : {}), ...(families.length ? { url: googleFontUrl(families) } : {}) } });
   };
   const candidates = state.candidates.length ? state.candidates : [{ hex: c.brand, reason: "current" }];
-
-  // Hex-field blur rule: trimmed empty -> clear (revert to derived), if clearing is allowed;
-  // valid 6-digit hex -> set; anything else -> no-op, and reset the field's displayed text
-  // back to the current value (the input is uncontrolled, so an unchanged value wouldn't
-  // otherwise force a re-render that resets it).
-  const hexBlur = (current: string | undefined, allowClear: boolean, onSet: (v: string | undefined) => void) =>
-    (e: FocusEvent<HTMLInputElement>) => {
-      const v = e.target.value.trim();
-      if (v === "") {
-        if (allowClear) onSet(undefined);
-        else e.target.value = current ?? "";
-        return;
-      }
-      if (HEX.test(v)) { onSet(v); return; }
-      e.target.value = current ?? "";
-    };
 
   return (
     <div className={s.controls}>
@@ -124,17 +204,15 @@ export function Controls({ state, dispatch }: { state: StudioState; dispatch: Di
 
       <details className={s.exact}>
         <summary>Exact values <span className={s.muted}>— hex codes, custom font, launcher</span></summary>
-        <label className={s.label} htmlFor="hex">Brand hex</label>
-        <input id="hex" className={s.input} defaultValue={c.brand} key={c.brand}
-          onBlur={hexBlur(c.brand, false, (v) => v && patch({ brand: v }))} />
-        <label className={s.label} htmlFor="accent">Accent hex (optional)</label>
-        <input id="accent" className={s.input} defaultValue={c.accent ?? ""} key={c.accent ?? ""} placeholder="Derived from brand"
-          onBlur={hexBlur(c.accent, true, (v) => patch({ accent: v }))} />
-        <label className={s.label} htmlFor="bg">Background hex (optional)</label>
-        <input id="bg" className={s.input} defaultValue={c.background ?? ""} key={c.background ?? ""} placeholder="Derived from brand"
-          onBlur={hexBlur(c.background, true, (v) => patch({ background: v }))} />
-        <label className={s.label} htmlFor="fonturl">Custom font stylesheet URL</label>
-        <input id="fonturl" className={s.input} defaultValue={c.font.url ?? ""} key={c.font.url ?? ""} placeholder="https://fonts.googleapis.com/…" onBlur={(e) => patch({ font: { ...c.font, url: e.target.value || undefined } })} />
+        <HexField id="hex" label="Brand hex" value={c.brand} allowClear={false} placeholder="e.g. #FFFFFF"
+          onCommit={(v) => { if (v) patch({ brand: v }); }} />
+        <HexField id="accent" label="Accent hex (optional)" value={c.accent} allowClear placeholder="e.g. #FFFFFF"
+          description="Used for highlights like badges — leave blank to derive from your brand colour."
+          onCommit={(v) => patch({ accent: v })} />
+        <HexField id="bg" label="Background hex (optional)" value={c.background} allowClear placeholder="e.g. #FFFFFF"
+          description="Your page/panel background, e.g. #FFFFFF for white — leave blank to derive."
+          onCommit={(v) => patch({ background: v })} />
+        <FontUrlField value={c.font.url} onCommit={(v) => patch({ font: { ...c.font, url: v } })} />
         <label className={s.label}>Launcher position</label>
         <div className={s.inlineRadios}>
           <label><input type="radio" checked={c.launcher.position === "bottom-right"} onChange={() => patch({ launcher: { ...c.launcher, position: "bottom-right" } })} /> Bottom right</label>
