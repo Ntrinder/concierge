@@ -16,7 +16,7 @@
 .nav { display: flex; gap: 24px; flex: 1; }
 .nav a { color: var(--ink); text-decoration: none; }
 .nav a:hover { color: var(--brand); text-decoration: underline; text-underline-offset: 4px; }
-.cart { font-variant: small-caps; letter-spacing: .04em; }
+.cart { font-variant: small-caps; letter-spacing: .04em; color: inherit; text-decoration: none; }
 .hero { max-width: 760px; padding: 88px clamp(16px, 5vw, 64px) 72px; }
 .eyebrow { color: var(--brand); font-style: italic; margin: 0 0 12px; }
 .hero h1 { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(40px, 7vw, 72px); line-height: 1.02; margin: 0 0 20px; letter-spacing: -0.01em; }

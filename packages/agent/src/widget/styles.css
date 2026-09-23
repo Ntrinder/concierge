@@ -297,7 +297,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .in-basket-options { color: var(--c-muted); font-size: var(--fs-sm); }
 .in-basket .price { font-size: var(--fs-lg); }
 .in-basket .btn-block { min-height: 52px; }
-.in-basket-view { display: flex; align-items: center; justify-content: center; min-height: 44px; color: var(--c-link); text-decoration: underline; }
+.in-basket-view { display: flex; align-items: center; justify-content: center; min-height: 44px; width: 100%; padding: 0; border: 0; background: transparent; color: var(--c-link); text-decoration: underline; cursor: pointer; }
+.in-basket .btn { text-decoration: none; }
 
 /* Fit-check highlight */
 .hl-link .t-link, .hl-btn .t-btn { outline: 2px dashed var(--c-focus); outline-offset: 3px; animation: hl 1.2s ease-in-out infinite; }
