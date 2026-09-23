@@ -5,10 +5,13 @@ const OPENING = "Need a beginner fly rod for small streams, packs down small eno
 
 const C = {
   flyRod: c({ key: "flyRod", label: "Fly rod", attr: "flyRod", op: "eq", value: true, hard: true }),
-  beginner: c({ key: "beginner", label: "Beginner-friendly", attr: "beginner", op: "eq", value: true, miss: "Built for experienced casters", receipt: "Beginner-friendly", receiptRank: 2 }),
-  packable: c({ key: "packable", label: "Packs ≤ 60 cm", attr: "packedCm", op: "max", value: 60, miss: "Packs to {actual} cm", receipt: "{actual} cm packed", receiptRank: 1 }),
-  budget: c({ key: "budget", label: "Under €150", attr: "price", op: "max", value: 150, miss: "€{over} over budget" }),
-  weight: c({ key: "weight", label: "3–4 wt", attr: "lineWeight", op: "max", value: 4, miss: "{actual} wt — heavier than ideal for small streams", receipt: "{actual} wt", receiptRank: 1 }),
+  beginner: c({ key: "beginner", label: "Beginner-friendly", attr: "beginner", op: "eq", value: true, miss: "Built for experienced casters", receipt: "Beginner-friendly", receiptRank: 2, bend: "built for experienced casters" }),
+  packable: c({ key: "packable", label: "Packs ≤ 60 cm", attr: "packedCm", op: "max", value: 60, miss: "Packs to {actual} cm", receipt: "{actual} cm packed", receiptRank: 1,
+    cell: { label: "Packed", pass: "{actual} cm ✓", fail: "{actual} cm ≠ ≤{limit}", rank: 1 }, bend: "packs to {actual} cm · won't fit a daypack", relabel: "Packs ≤ {value} cm" }),
+  budget: c({ key: "budget", label: "Under €150", attr: "price", op: "max", value: 150, miss: "€{over} over budget",
+    cell: { label: "Price", pass: "€{under} under", fail: "€{over} over", rank: 3 }, bend: "+€{over} budget · otherwise perfect", relabel: "Under €{value}" }),
+  weight: c({ key: "weight", label: "3–4 wt", attr: "lineWeight", op: "max", value: 4, miss: "{actual} wt — heavier than ideal for small streams", receipt: "{actual} wt", receiptRank: 1,
+    cell: { label: "Line", pass: "{actual} wt ✓", fail: "{actual} wt ≠ 3–4", rank: 2 }, bend: "{actual} wt · heavier than ideal for small streams", relabel: "Up to {value} wt" }),
 };
 
 const NEAR_MISS_REPLIES: Reply[] = [
@@ -23,9 +26,9 @@ const CONFIRM: Reply[] = [
 const WEIGHT_COPY = {
   match: { warm: "Good news — these tick every box:", neutral: "These match everything:", terse: "Matches:" },
   none: {
-    warm: "Honest answer: nothing we stock ticks every box. Here's the closest from each direction — each one misses on just one thing:",
-    neutral: "Nothing matches all five. Closest options, each missing one requirement:",
-    terse: "No exact match. Closest, one miss each:",
+    warm: "Honest answer: nothing we stock hits all four. Here's what I'd buy as a beginner:",
+    neutral: "Nothing matches all four. Here's what I'd pick for a beginner:",
+    terse: "Nothing hits all four. Here's what I'd buy as a beginner:",
   },
 };
 
@@ -34,6 +37,10 @@ export const fishing: Script = {
   opening: OPENING,
   demoInputs: [OPENING, "Yes, 3–4 weight", "Stretch the budget to €200", "Compare the first two", { add: "f-stillwater-trail" }],
   greetingReplies: [{ label: "“Beginner fly rod for small streams…”", text: OPENING }],
+
+  pickNearMiss(closest) {
+    return closest.find((n) => n.product.attrs.kit === true) ?? closest[0]!;
+  },
 
   route(text, state) {
     const t = text.toLowerCase();
@@ -79,8 +86,8 @@ export const fishing: Script = {
         }) },
         { kind: "text", text: v({
           warm: "One thing worth knowing: on small streams a light 3–4 weight rod makes casting under trees easier and small trout more fun. Shall I stick to those?",
-          neutral: "For small streams, a 3–4 weight is ideal. OK to go with that?",
-          terse: "Small streams → 3–4 wt. Go with that?",
+          neutral: "For small streams, a light rod (3–4 weight) is easiest to cast. Go with that?",
+          terse: "A light rod (3–4 weight) suits small streams — go with that?",
         }) },
       ],
       replies: CONFIRM,

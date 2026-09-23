@@ -3,6 +3,7 @@ import type { AgentConfig, Message } from "../types";
 import { Avatar } from "./Header";
 import { Compare } from "./Compare";
 import { InBasket } from "./InBasket";
+import { NearMissPick } from "./NearMissPick";
 import { NotifyForm } from "./NotifyForm";
 import { ProductList } from "./ProductCard";
 
@@ -16,6 +17,7 @@ interface Props {
   onOpen: (id: string) => void;
   onChoose: (id: string) => void;
   onAdd: (id: string) => void;
+  onBend: (key: string, productId: string) => void;
   onNotify: (messageId: string, email: string) => void;
 }
 
@@ -24,7 +26,7 @@ function Words({ text, animate }: { text: string; animate: boolean }) {
   return <>{text.split(/(\s+)/).map((w, i) => (/\s+/.test(w) ? w : <span key={i} class="word" style={{ animationDelay: `${i * 14}ms` }}>{w}</span>))}</>;
 }
 
-export function MessageList({ config, messages, visible, typing, compact, animateFrom, onOpen, onChoose, onAdd, onNotify }: Props) {
+export function MessageList({ config, messages, visible, typing, compact, animateFrom, onOpen, onChoose, onAdd, onBend, onNotify }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -65,6 +67,8 @@ export function MessageList({ config, messages, visible, typing, compact, animat
             return <div key={m.id} class="msg msg-rich"><NotifyForm done={m.done} onSubmit={(email) => onNotify(m.id, email)} /></div>;
           case "added":
             return <div key={m.id} class="msg msg-rich"><InBasket config={config} productId={m.productId} options={m.options} count={m.count} /></div>;
+          case "near-miss":
+            return <div key={m.id} class="msg msg-rich"><NearMissPick config={config} pick={m.pick} bends={m.bends} used={m.used} onAdd={onAdd} onBend={onBend} /></div>;
         }
       })}
       {typing && (

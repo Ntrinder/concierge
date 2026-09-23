@@ -3,7 +3,7 @@ import type { Product } from "../types";
 interface GearInput {
   id: string; name: string; byline: string; price: number; glyph: "rod" | "reel" | "kit";
   flyRod: boolean; beginner: boolean; packedCm: number; lineWeight?: number;
-  specs: [string, string][]; blurb: string; why: string; whyFor?: Record<string, string>; addon?: boolean;
+  specs: [string, string][]; blurb: string; why: string; whyFor?: Record<string, string>; addon?: boolean; kit?: boolean;
 }
 
 const gear = (g: GearInput): Product => ({
@@ -13,6 +13,7 @@ const gear = (g: GearInput): Product => ({
     flyRod: g.flyRod, beginner: g.beginner, packedCm: g.packedCm,
     ...(g.lineWeight !== undefined ? { lineWeight: g.lineWeight } : {}),
     ...(g.addon ? { addon: true } : {}),
+    ...(g.kit ? { kit: true } : {}),
   },
   specs: g.specs.map(([label, value]) => ({ label, value })),
 });
@@ -41,7 +42,7 @@ export const FISHING: Product[] = [
     specs: [["Length", "6'6\""], ["Line", "3 wt"], ["Pieces", "3"], ["Packed", "88 cm"], ["Weight", "70 g"], ["Action", "Medium"]],
     blurb: "A short rod built for overgrown streams where a longer rod can't swing.",
     why: "Brilliant under trees; packs long." }),
-  gear({ id: "f-trailhead-kit", name: "Trailhead 8'6\" 5wt Kit", byline: "Rod, reel, line & case", price: 145, glyph: "kit",
+  gear({ id: "f-trailhead-kit", name: "Trailhead 8'6\" 5wt Kit", byline: "Rod, reel, line & case", price: 145, glyph: "kit", kit: true,
     flyRod: true, beginner: true, packedCm: 55, lineWeight: 5,
     specs: [["Length", "8'6\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "55 cm"], ["Weight", "96 g"], ["Includes", "Reel + line"]],
     blurb: "Everything you need in one case: rod, reel, backing and floating line.",
@@ -63,7 +64,7 @@ export const FISHING: Product[] = [
     flyRod: true, beginner: true, packedCm: 69, lineWeight: 5,
     specs: [["Length", "8'6\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "69 cm"], ["Weight", "92 g"], ["Action", "Medium"]],
     blurb: "A friendly first rod for lakes and medium rivers.", why: "Cheap and cheerful." }),
-  gear({ id: "f-tarn-kit", name: "Tarn 9' 5wt Starter Kit", byline: "Rod, reel, line & tube", price: 165, glyph: "kit",
+  gear({ id: "f-tarn-kit", name: "Tarn 9' 5wt Starter Kit", byline: "Rod, reel, line & tube", price: 165, glyph: "kit", kit: true,
     flyRod: true, beginner: true, packedCm: 72, lineWeight: 5,
     specs: [["Length", "9'0\""], ["Line", "5 wt"], ["Pieces", "4"], ["Packed", "72 cm"], ["Weight", "101 g"], ["Includes", "Reel + line"]],
     blurb: "A complete lake-and-river kit.", why: "Everything included, for bigger water." }),

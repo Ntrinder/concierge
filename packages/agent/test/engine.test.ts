@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialState, markAdded, removeConstraint, replay, send } from "../src/engine/engine";
+import { bendConstraint, initialState, markAdded, removeConstraint, replay, send } from "../src/engine/engine";
 import { SCRIPTS } from "../src/engine";
 import { CATALOGS } from "../src/catalogs";
 import type { ConvState, Message } from "../src/types";
@@ -53,12 +53,17 @@ describe("fishing journey — nothing matches", () => {
     let s = initialState("fishing", "terse");
     s = send(s, SCRIPTS.fishing.opening);
     s = send(s, "Yes, 3–4 weight");
-    const nm = lastOf(s, "products")!;
-    expect(nm.mode).toBe("near-miss");
-    expect(nm.items).toEqual([
-      { productId: "f-stillwater-trail", flag: "€29 over budget", receipts: ["58 cm packed", "4 wt", "Beginner-friendly"] },
-      { productId: "f-trailhead-kit", flag: "5 wt — heavier than ideal for small streams", receipts: ["55 cm packed", "Beginner-friendly"] },
-      { productId: "f-brookline", flag: "Packs to 85 cm", receipts: ["4 wt", "Beginner-friendly"] },
+    const nm = lastOf(s, "near-miss")!;
+    expect(nm.pick.productId).toBe("f-trailhead-kit");
+    expect(nm.pick.cells).toEqual([
+      { label: "Packed", value: "55 cm ✓", fail: false },
+      { label: "Line", value: "5 wt ≠ 3–4", fail: true },
+      { label: "Price", value: "€5 under", fail: false },
+    ]);
+    expect(nm.pick.why).toBe("Everything's in the box, so you're fishing on day one. A 5 weight is a little heavy for tiny streams but forgiving to learn on.");
+    expect(nm.bends).toEqual([
+      { productId: "f-stillwater-trail", key: "budget", text: "+€29 budget · otherwise perfect" },
+      { productId: "f-brookline", key: "packable", text: "packs to 85 cm · won't fit a daypack" },
     ]);
     s = send(s, "Stretch the budget to €200");
     expect(active(s)).toContain("Under €200");
@@ -114,6 +119,41 @@ describe("add to basket — fishing", () => {
     expect(added.productId).toBe("f-stillwater-trail");
     expect(added.options).toEqual([]);
     expect(s.replies.map((r) => r.label)).toContain("Add a leader & tippet pack");
+  });
+});
+
+describe("bending a rule on the near-miss pick", () => {
+  it("bending budget relabels the constraint and matches the bent-to product", () => {
+    let s = replay("fishing", "terse", 2);
+    s = bendConstraint(s, "budget", "f-stillwater-trail");
+    const budget = s.constraints.find((c) => c.key === "budget")!;
+    expect(budget.value).toBe(179);
+    expect(budget.label).toBe("Under €179");
+    const products = lastOf(s, "products")!;
+    expect(products.mode).toBe("match");
+    expect(products.items.map((i) => i.productId)).toContain("f-stillwater-trail");
+    expect(lastOf(s, "near-miss")!.used).toBe(true);
+  });
+
+  it("bending packable matches the bent-to product", () => {
+    let s = replay("fishing", "terse", 2);
+    s = bendConstraint(s, "packable", "f-brookline");
+    const products = lastOf(s, "products")!;
+    expect(products.items.map((i) => i.productId)).toContain("f-brookline");
+  });
+});
+
+describe("near-miss pick — default without a script hook", () => {
+  it("picks the sole/closest near miss when the script defines no pickNearMiss", () => {
+    let s = send(initialState("books", "warm"), SCRIPTS.books.opening);
+    s = send(s, "Cosy");
+    const nm = lastOf(s, "near-miss")!;
+    expect(nm.pick.productId).toBe("b-pennyfold");
+    expect(nm.pick.cells).toEqual([
+      { label: "Pages", value: "288 ✓", fail: false },
+      { label: "Gripping", value: "More slow-burn than gripping", fail: true },
+    ]);
+    expect(nm.bends).toEqual([]);
   });
 });
 

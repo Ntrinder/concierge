@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { getProduct } from "../catalogs";
-import { markAdded, removeConstraint, replay, send, submitNotify } from "../engine/engine";
+import { bendConstraint, markAdded, removeConstraint, replay, send, submitNotify } from "../engine/engine";
 import { varsToCss } from "../tokens";
 import type { AgentConfig } from "../types";
 import styles from "./styles.css?inline";
@@ -122,6 +122,7 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
                 onOpen={setDetail}
                 onChoose={setDetail}
                 onAdd={(id) => addToBasket(getProduct(config.store, id), { giftWrap: false })}
+                onBend={(key, id) => setConv((s) => bendConstraint(s, key, id))}
                 onNotify={(id, email) => setConv((s) => submitNotify(s, id, email))}
               />
               <Composer replies={conv.replies} busy={busy} placeholder={placeholder} onSend={say} />

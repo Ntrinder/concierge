@@ -14,19 +14,30 @@ function satisfies(actual: AttrValue | undefined, c: Constraint): boolean {
   }
 }
 
+/** Fills a copy template with a constraint's limit and a product's actual value.
+ * {actual} the product's value, {limit}/{value} the constraint's value,
+ * {over} = actual − limit, {under} = limit − actual (both rounded). */
+export function fill(template: string, c: Constraint, actual: AttrValue | undefined): string {
+  const num = typeof actual === "number" ? actual : undefined;
+  const limit = Number(c.value);
+  const over = num === undefined ? 0 : Math.round(num - limit);
+  const under = num === undefined ? 0 : Math.round(limit - num);
+  return template
+    .replace("{actual}", actual === undefined ? "–" : String(actual))
+    .replace("{limit}", String(c.value))
+    .replace("{value}", String(c.value))
+    .replace("{over}", String(over))
+    .replace("{under}", String(under));
+}
+
 export function violationOf(p: Product, c: Constraint): Violation | null {
   const actual = attrOf(p, c.attr);
   if (satisfies(actual, c)) return null;
   let severity = 1;
-  let over = 0;
   if (typeof actual === "number" && (c.op === "max" || c.op === "min")) {
-    over = Math.abs(actual - Number(c.value));
-    severity = over / Math.max(1, Number(c.value));
+    severity = Math.abs(actual - Number(c.value)) / Math.max(1, Number(c.value));
   }
-  const text = (c.miss ?? `Not ${c.label.toLowerCase()}`)
-    .replace("{actual}", actual === undefined ? "–" : String(actual))
-    .replace("{limit}", String(c.value))
-    .replace("{over}", String(Math.round(over)));
+  const text = fill(c.miss ?? `Not ${c.label.toLowerCase()}`, c, actual);
   return { constraint: c, actual, severity, text };
 }
 

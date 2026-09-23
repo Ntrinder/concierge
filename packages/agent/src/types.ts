@@ -61,6 +61,12 @@ export interface Constraint {
   receipt?: string;
   /** lower shows first; default 9 */
   receiptRank?: number;
+  /** spec-grid cell in the near-miss pick; {actual} {limit} {over} {under} */
+  cell?: { label: string; pass: string; fail: string; rank: number };
+  /** "bend one rule" line for a product that breaks only this constraint */
+  bend?: string;
+  /** chip label after bending a numeric limit to {value} */
+  relabel?: string;
   status: "active" | "dropped";
   /** turn number when this constraint was added or dropped (set by the engine) */
   changedAt?: number;
@@ -79,7 +85,11 @@ export type AgentDraft =
   | { kind: "constraint-change"; kept: string[]; dropped: string[]; added: string[] }
   | { kind: "compare"; productIds: string[]; chosen?: string }
   | { kind: "notify-form"; done?: string }
-  | { kind: "added"; productId: string; options: string[]; count: number };
+  | { kind: "added"; productId: string; options: string[]; count: number }
+  | { kind: "near-miss";
+      pick: { productId: string; cells: { label: string; value: string; fail: boolean }[]; why: string };
+      bends: { productId: string; key: string; text: string }[];
+      used?: boolean };
 
 export type Message =
   | { id: string; role: "user"; kind: "text"; text: string }

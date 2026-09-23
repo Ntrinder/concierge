@@ -6,9 +6,10 @@ const CHANGE = "Actually, he's gone off crime lately — he's been reading a lot
 
 const C = {
   mystery: c({ key: "mystery", label: "Mystery", attr: "genres", op: "includes", value: "mystery", hard: true, group: "genre" }),
-  gripping: c({ key: "gripping", label: "Gripping", attr: "tags", op: "includes", value: "gripping", miss: "More slow-burn than gripping", receipt: "Gripping", receiptRank: 4 }),
-  gore: c({ key: "gore", label: "Not too gory", attr: "gore", op: "max", value: 1, miss: "Grittier than you'd like", receipt: "Not gory", receiptRank: 2 }),
-  pages: c({ key: "pages", label: "Under 400 pages", attr: "pages", op: "max", value: 400, miss: "{actual} pages", receipt: "{actual} pages", receiptRank: 1 }),
+  gripping: c({ key: "gripping", label: "Gripping", attr: "tags", op: "includes", value: "gripping", miss: "More slow-burn than gripping", receipt: "Gripping", receiptRank: 4, bend: "more slow-burn than gripping" }),
+  gore: c({ key: "gore", label: "Not too gory", attr: "gore", op: "max", value: 1, miss: "Grittier than you'd like", receipt: "Not gory", receiptRank: 2, bend: "grittier than you'd like" }),
+  pages: c({ key: "pages", label: "Under 400 pages", attr: "pages", op: "max", value: 400, miss: "{actual} pages", receipt: "{actual} pages", receiptRank: 1,
+    cell: { label: "Pages", pass: "{actual} ✓", fail: "{actual} ≠ <{limit}", rank: 1 }, bend: "{actual} pages · a longer read", relabel: "Under {value} pages" }),
   notRankin: c({ key: "notRankin", label: "Not Rankin", attr: "author", op: "excludes", value: "Ian Rankin", hard: true, group: "genre" }),
   procedural: c({ key: "procedural", label: "Police procedural", attr: "genres", op: "includes", value: "police-procedural", hard: true, group: "genre", receipt: "Police procedural", receiptRank: 3 }),
   historical: c({ key: "historical", label: "Historical", attr: "genres", op: "includes", value: "historical", hard: true, group: "genre", receipt: "Historical", receiptRank: 3 }),
@@ -103,7 +104,7 @@ export const books: Script = {
       if (chosen) constraints = upsert(constraints, { ...chosen });
       const out = present(ctx, constraints, {
         match: { warm: "Here are the ones I'd happily put in his hands:", neutral: "These fit everything you've told me:", terse: "Matches:" },
-        none: { warm: "Nothing in that style ticks every box, but these come close — each misses on just one thing:", neutral: "No exact matches in that style. Closest options:", terse: "No exact match. Closest:" },
+        none: { warm: "Nothing in that style ticks every box — here's the one I'd choose, and what it gives up:", neutral: "No exact match in that style. My pick:", terse: "No exact match. Pick:" },
       });
       return { constraints, messages: out.messages, lastShown: out.lastShown, replies: AFTER_RESULTS };
     },

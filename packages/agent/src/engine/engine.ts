@@ -1,7 +1,8 @@
 import { CATALOGS, getProduct } from "../catalogs";
+import { attrOf, fill } from "../matcher";
 import type { AgentDraft, Constraint, ConvState, Message, StoreKey, Voice, VoiceCopy } from "../types";
 import { SCRIPTS } from "./index";
-import { present, type Ctx, type TurnOutput } from "./present";
+import { drop, present, upsert, type Ctx, type TurnOutput } from "./present";
 
 export function initialState(store: StoreKey, voice: Voice): ConvState {
   return { store, voice, step: "start", turn: 0, seq: 0, constraints: [], messages: [], replies: SCRIPTS[store].greetingReplies, lastShown: [], basketCount: 0 };
@@ -23,7 +24,7 @@ function stamp(prev: Constraint[], next: Constraint[], turn: number): Constraint
 }
 
 function ctxFor(s: ConvState, text: string): Ctx {
-  return { state: s, products: CATALOGS[s.store], text, v: (c: VoiceCopy) => c[s.voice] };
+  return { state: s, products: CATALOGS[s.store], text, v: (c: VoiceCopy) => c[s.voice], script: SCRIPTS[s.store] };
 }
 
 function apply(s: ConvState, out: TurnOutput, step: string): ConvState {
@@ -60,6 +61,29 @@ export function removeConstraint(state: ConvState, key: string): ConvState {
   return apply(state, { constraints, messages: out.messages, lastShown: out.lastShown, replies: state.replies }, state.step);
 }
 
+export function bendConstraint(state: ConvState, key: string, productId: string): ConvState {
+  const target = state.constraints.find((x) => x.key === key && x.status === "active");
+  if (!target || target.hard) return state;
+  const product = getProduct(state.store, productId);
+  const actual = product ? attrOf(product, target.attr) : undefined;
+  const constraints =
+    (target.op === "max" || target.op === "min") && typeof actual === "number"
+      ? upsert(state.constraints, { ...target, value: actual, label: target.relabel ? fill(target.relabel, { ...target, value: actual }, actual) : target.label })
+      : drop(state.constraints, (x) => x.key === key);
+
+  // Disable the bend rows on the near-miss message that offered this trade-off
+  const nearMiss = [...state.messages].reverse().find((m) => m.role === "agent" && m.kind === "near-miss" && !m.used);
+  const messages = nearMiss ? state.messages.map((m) => (m.id === nearMiss.id ? { ...m, used: true } : m)) : state.messages;
+  const s = { ...state, messages };
+
+  const ctx = ctxFor(s, "");
+  const out = present(ctx, constraints, {
+    match: { warm: "Bending that one — here's what fits now:", neutral: "Adjusted. These fit:", terse: "Adjusted:" },
+    none: { warm: "Even bent, nothing ticks every box — here's my pick:", neutral: "Still no exact match. My pick:", terse: "Pick:" },
+  });
+  return apply(s, { constraints, messages: out.messages, lastShown: out.lastShown, replies: state.replies }, state.step);
+}
+
 export function markAdded(state: ConvState, productId: string, opts: { giftWrap: boolean } = { giftWrap: false }): ConvState {
   const script = SCRIPTS[state.store];
   const v = (c: VoiceCopy) => c[state.voice];
@@ -74,7 +98,7 @@ export function markAdded(state: ConvState, productId: string, opts: { giftWrap:
   const messages = target ? state.messages.map((m) => (m.id === target.id ? { ...m, chosen: productId } : m)) : state.messages;
   const s = { ...state, messages };
 
-  const after = product && script.afterAdd ? script.afterAdd({ state: s, products: CATALOGS[s.store], text: "", v }, product) : undefined;
+  const after = product && script.afterAdd ? script.afterAdd({ state: s, products: CATALOGS[s.store], text: "", v, script }, product) : undefined;
   const fallback: AgentDraft = { kind: "text", text: v({ warm: "It's in your basket. Anything else I can help you find?", neutral: "Added. Anything else?", terse: "Added." }) };
 
   return apply({ ...s, basketCount: count }, {
