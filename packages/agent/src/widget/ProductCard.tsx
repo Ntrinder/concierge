@@ -3,7 +3,8 @@ import type { AgentConfig, Product, ProductImage } from "../types";
 import { cls } from "./cls";
 import { FlagIcon } from "./icons";
 
-export const formatPrice = (n: number) => `€${Number.isInteger(n) ? n : n.toFixed(2)}`;
+const priceFormatter = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
+export const formatPrice = (n: number) => priceFormatter.format(n);
 
 const ReceiptCheck = () => (
   <svg width={12} height={12} viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width={2.2} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="receipt-check">
@@ -23,10 +24,10 @@ function Glyph({ glyph }: { glyph: "rod" | "reel" | "kit" }) {
 }
 
 export function ProductImageView({ image, product, size }: { image: ProductImage; product: Product; size: "xs" | "sm" | "lg" }) {
-  if (image.kind === "glyph") return <div class={cls("glyph", `glyph-${size}`)}><Glyph glyph={image.glyph} /></div>;
+  if (image.kind === "glyph") return <div class={cls("glyph", `glyph-${size}`)} aria-hidden="true"><Glyph glyph={image.glyph} /></div>;
   // Cover colours are product artwork (data), not theme — inline style is intentional
   return (
-    <div class={cls("cover", `cover-${size}`, `motif-${image.motif}`)} style={{ background: image.bg, color: image.fg }} aria-hidden="true">
+    <div class={cls("cover", `cover-${size}`, `motif-${image.motif}`)} style={{ background: image.bg, color: image.fg }} aria-hidden="true" lang="en">
       {size !== "xs" && <><span class="cover-title">{product.name}</span><span class="cover-author">{product.byline}</span></>}
     </div>
   );

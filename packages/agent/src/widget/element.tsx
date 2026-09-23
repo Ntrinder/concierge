@@ -2,6 +2,7 @@ import { render } from "preact";
 import { deriveTokens } from "../tokens";
 import type { AgentConfig } from "../types";
 import { App } from "./App";
+import { normalize } from "./normalize";
 
 function loadFont(url?: string) {
   if (!url || document.querySelector(`link[data-concierge-font="${CSS.escape(url)}"]`)) return;
@@ -10,48 +11,6 @@ function loadFont(url?: string) {
   link.href = url;
   link.dataset.conciergeFont = url;
   document.head.appendChild(link);
-}
-
-const STORES = ["books", "fishing"];
-
-/**
- * Configs arrive over the network (or from a merchant's own script), so never
- * trust their shape: fill in harmless defaults for missing style fields and
- * refuse — with a console warning, never a thrown error on the host page —
- * when the essentials are missing.
- */
-function normalize(raw: unknown): AgentConfig | null {
-  const c = raw as Partial<AgentConfig> | null;
-  if (!c || typeof c !== "object") return null;
-  if (typeof c.brand !== "string" || !/^#[0-9a-f]{6}$/i.test(c.brand)) return null;
-  if (!STORES.includes(c.store as string)) return null;
-  if (!c.agent || typeof c.agent !== "object" || typeof c.agent.name !== "string") return null;
-  const f = c.font && typeof c.font === "object" ? c.font : null;
-  const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-  const font = {
-    family: str(f?.family) ?? "inherit",
-    ...(str(f?.display) ? { display: str(f?.display) } : {}),
-    ...(str(f?.url) ? { url: str(f?.url) } : {}),
-  };
-  const validUrl = (v: unknown): v is string => typeof v === "string" && ((v.startsWith("/") && !v.startsWith("//")) || v.startsWith("https://"));
-  const b = c.basket && typeof c.basket === "object" ? c.basket : null;
-  const basket = {
-    ...(validUrl(b?.checkoutUrl) ? { checkoutUrl: b!.checkoutUrl } : {}),
-    ...(validUrl(b?.basketUrl) ? { basketUrl: b!.basketUrl } : {}),
-  };
-
-  return {
-    ...c,
-    surface: c.surface === "dark" ? "dark" : "light",
-    font,
-    shape: c.shape ?? "rounded",
-    density: c.density ?? "regular",
-    voice: c.voice ?? "neutral",
-    cardStyle: c.cardStyle ?? "visual",
-    agent: { ...c.agent, greeting: c.agent.greeting ?? "" },
-    launcher: c.launcher && typeof c.launcher === "object" ? c.launcher : { position: "bottom-right" },
-    ...(Object.keys(basket).length ? { basket } : {}),
-  } as AgentConfig;
 }
 
 export class ConciergeAgent extends HTMLElement {

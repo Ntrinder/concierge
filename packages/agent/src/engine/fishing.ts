@@ -12,6 +12,7 @@ const C = {
     cell: { label: "Price", pass: "€{under} under", fail: "€{over} over", rank: 3 }, bend: "+€{over} budget · otherwise perfect", relabel: "Under €{value}", short: "≤€{value}", shortRank: 3 }),
   weight: c({ key: "weight", label: "3–4 wt", attr: "lineWeight", op: "max", value: 4, miss: "{actual} wt — heavier than ideal for small streams", receipt: "{actual} wt", receiptRank: 1,
     cell: { label: "Line", pass: "{actual} wt ✓", fail: "{actual} wt ≠ 3–4", rank: 2 }, bend: "{actual} wt · heavier than ideal for small streams", relabel: "Up to {value} wt", short: "3–4 wt", shortBent: "≤{value} wt", shortRank: 1 }),
+  kit: c({ key: "kit", label: "Complete kit", attr: "kit", op: "eq", value: true, hard: true, short: "kit", shortRank: 0, receipt: "Reel + line included", receiptRank: 1 }),
 };
 
 const NEAR_MISS_REPLIES: Reply[] = [
@@ -36,7 +37,11 @@ export const fishing: Script = {
   store: "fishing",
   opening: OPENING,
   demoInputs: [OPENING, "Yes, 3–4 weight", "Stretch the budget to €200", "Compare the first two", { add: "f-stillwater-trail" }],
-  greetingReplies: [{ label: "“Beginner fly rod for small streams…”", text: OPENING }],
+  greetingReplies: [
+    { label: "Beginner fly rod for small streams…", text: OPENING },
+    { label: "A packable rod for hiking", text: "A packable rod for hiking" },
+    { label: "A complete kit to get started", text: "A complete kit to get started" },
+  ],
   stripLabel: "Spec",
 
   pickNearMiss(closest) {
@@ -45,7 +50,11 @@ export const fishing: Script = {
 
   route(text, state) {
     const t = text.toLowerCase();
-    if (state.step === "start") return /rod|fly|stream|hik|fish|reel/.test(t) ? "understand" : "fallback";
+    if (state.step === "start") {
+      if (/kit|everything|complete|start(ed)?$/.test(t)) return "kitStart";
+      if (/pack|hik/.test(t) && !/beginner|small stream/.test(t)) return "packStart";
+      return /rod|fly|stream|hik|fish|reel/.test(t) ? "understand" : "fallback";
+    }
     if (state.step === "added") {
       if (/leader|tippet/.test(t)) return "leaderPack";
       if (/no thanks|no$/.test(t)) return "doneAdd";
@@ -93,6 +102,27 @@ export const fishing: Script = {
       ],
       replies: CONFIRM,
     }),
+
+    packStart: (ctx) => {
+      const constraints = [C.flyRod, C.packable];
+      const out = present(ctx, constraints, {
+        match: { warm: "These all pack to 60 cm or less — daypack-friendly:", neutral: "Packs to 60 cm or less:", terse: "≤60 cm packed:" },
+        none: { warm: "Closest:", neutral: "Closest:", terse: "Closest:" },
+      });
+      return {
+        constraints, messages: out.messages, lastShown: out.lastShown,
+        replies: [{ label: "Compare the first two", text: "Compare the first two" }, { label: "Stretch the budget to €200", text: "Stretch the budget to €200" }],
+      };
+    },
+
+    kitStart: (ctx) => {
+      const constraints = [C.flyRod, C.kit];
+      const out = present(ctx, constraints, {
+        match: { warm: "Everything in one box — rod, reel and line, ready to fish:", neutral: "Complete kits:", terse: "Kits:" },
+        none: { warm: "Closest:", neutral: "Closest:", terse: "Closest:" },
+      });
+      return { constraints, messages: out.messages, lastShown: out.lastShown, replies: [{ label: "Compare the first two", text: "Compare the first two" }] };
+    },
 
     explain: ({ v }) => ({
       messages: [{ kind: "text", text: v({

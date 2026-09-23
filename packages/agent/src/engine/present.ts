@@ -3,7 +3,7 @@ import { receiptsFor, whyText } from "../receipts";
 import type { AgentDraft, Constraint, ConvState, NearMiss, Product, Reply, StoreKey, VoiceCopy } from "../types";
 
 export interface Ctx { state: ConvState; products: Product[]; text: string; v: (c: VoiceCopy) => string; script: Script }
-export interface TurnOutput { messages: AgentDraft[]; replies: Reply[]; constraints?: Constraint[]; step?: string; lastShown?: string[] }
+export interface TurnOutput { messages: AgentDraft[]; replies: Reply[]; constraints?: Constraint[]; step?: string; lastShown?: string[]; stripLabel?: string }
 export interface Script {
   store: StoreKey;
   opening: string;
@@ -25,7 +25,7 @@ const EMPTY: VoiceCopy = {
 };
 
 export function present(ctx: Ctx, constraints: Constraint[], copy: { match: VoiceCopy; none: VoiceCopy }, limit = 3) {
-  const { matches, nearMisses } = match(ctx.products, constraints);
+  const { matches, nearMisses } = match(ctx.products.filter((p) => p.attrs.addon !== true), constraints);
   if (matches.length) {
     const shown = matches.slice(0, limit);
     return {

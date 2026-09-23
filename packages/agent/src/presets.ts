@@ -22,6 +22,8 @@ export const DEMO_CONFIGS = {
     agent: { name: "Riffle Guide", avatar: "/demo/riffle-logo.svg", greeting: "Where are you fishing, and what do you need? I'll match the gear." },
     launcher: { position: "bottom-right", label: "Ask a guide" },
     basket: { basketUrl: "/demo/fishing/basket", checkoutUrl: "/demo/fishing/basket" },
+    heading: { case: "uppercase", tracking: 0.06 },
+    topOffset: 72,
   },
 } satisfies Record<string, AgentConfig>;
 

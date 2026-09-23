@@ -19,7 +19,7 @@ export function Header({ config, onClose }: { config: AgentConfig; onClose: () =
       <Avatar config={config} />
       <div class="header-text">
         <p class="title">{config.agent.name}</p>
-        <p class="subtitle">Shopping assistant · replies instantly</p>
+        {config.agent.subtitle && <p class="subtitle">{config.agent.subtitle}</p>}
       </div>
       <button type="button" class="icon-btn" aria-label="Close assistant" onClick={onClose}><CloseIcon /></button>
     </div>

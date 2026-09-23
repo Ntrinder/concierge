@@ -76,6 +76,19 @@ export function validate(c: Partial<AgentConfig>): string | null {
   if (agent.avatar !== undefined && (typeof agent.avatar !== "string" || !validAvatar(agent.avatar))) {
     return "Logo must be an https:// image or an uploaded PNG";
   }
+  if (agent.subtitle !== undefined && (typeof agent.subtitle !== "string" || agent.subtitle.length > 80)) {
+    return "Subtitle must be under 80 characters";
+  }
+
+  if (c.heading !== undefined) {
+    if (typeof c.heading !== "object" || Array.isArray(c.heading)) return "Heading settings are invalid";
+    const { case: hCase, tracking } = c.heading as Record<string, unknown>;
+    if (hCase !== undefined && hCase !== "none" && hCase !== "uppercase") return "Heading case must be none or uppercase";
+    if (tracking !== undefined && (typeof tracking !== "number" || tracking < 0 || tracking > 0.2)) return "Heading tracking must be between 0 and 0.2";
+  }
+  if (c.topOffset !== undefined && (typeof c.topOffset !== "number" || c.topOffset < 0 || c.topOffset > 200)) {
+    return "Top offset must be between 0 and 200";
+  }
 
   const launcher = c.launcher as unknown as Record<string, unknown> | undefined;
   if (!launcher || typeof launcher !== "object" || !oneOf(launcher.position, ENUMS.position)) return "Launcher position must be bottom-right or bottom-left";
@@ -105,9 +118,11 @@ function clean(c: AgentConfig, id: string): AgentConfig {
     density: c.density,
     voice: c.voice,
     cardStyle: c.cardStyle,
-    agent: { name: c.agent.name, greeting: c.agent.greeting, ...(c.agent.avatar ? { avatar: c.agent.avatar } : {}) },
+    agent: { name: c.agent.name, greeting: c.agent.greeting, ...(c.agent.avatar ? { avatar: c.agent.avatar } : {}), ...(c.agent.subtitle ? { subtitle: c.agent.subtitle } : {}) },
     launcher: { position: c.launcher.position, ...(c.launcher.label ? { label: c.launcher.label } : {}) },
     ...(c.basket ? { basket: { ...(c.basket.checkoutUrl ? { checkoutUrl: c.basket.checkoutUrl } : {}), ...(c.basket.basketUrl ? { basketUrl: c.basket.basketUrl } : {}) } } : {}),
+    ...(c.heading ? { heading: { ...(c.heading.case ? { case: c.heading.case } : {}), ...(c.heading.tracking !== undefined ? { tracking: c.heading.tracking } : {}) } } : {}),
+    ...(c.topOffset !== undefined ? { topOffset: c.topOffset } : {}),
   };
 }
 

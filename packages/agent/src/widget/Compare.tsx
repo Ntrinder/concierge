@@ -3,11 +3,12 @@ import type { AgentConfig, Product } from "../types";
 import { cls } from "./cls";
 import { formatPrice, ProductImageView } from "./ProductCard";
 
-export function Compare({ config, productIds, chosen, compact, onChoose }: { config: AgentConfig; productIds: string[]; chosen?: string; compact: boolean; onChoose: (id: string) => void }) {
+export function Compare({ config, productIds, chosen, onChoose }: { config: AgentConfig; productIds: string[]; chosen?: string; onChoose: (id: string) => void }) {
   const products = productIds.map((id) => getProduct(config.store, id)).filter((p): p is Product => !!p);
   const labels = [...new Set(products.flatMap((p) => p.specs.map((s) => s.label)))];
   const specOf = (p: Product, label: string) => p.specs.find((s) => s.label === label)?.value ?? "—";
   const mono = config.cardStyle === "spec";
+  const differs = (values: string[]) => new Set(values).size > 1;
 
   if (chosen) {
     return (
@@ -29,25 +30,7 @@ export function Compare({ config, productIds, chosen, compact, onChoose }: { con
     );
   }
 
-  if (compact) {
-    return (
-      <div class="compare-stack">
-        {products.map((p) => (
-          <div class="compare-card" key={p.id}>
-            <div class="compare-card-head">
-              <ProductImageView image={p.image} product={p} size="sm" />
-              <div><div class="card-name">{p.name}</div><div class="price">{formatPrice(p.price)}</div></div>
-            </div>
-            <dl class="compare-dl">
-              {labels.map((l) => <div key={l}><dt>{l}</dt><dd class={mono ? "mono" : ""}>{specOf(p, l)}</dd></div>)}
-              {!mono && <div><dt>Why</dt><dd>{p.why}</dd></div>}
-            </dl>
-            <button type="button" class="btn btn-primary btn-block t-btn" aria-label={`Choose ${p.name}`} onClick={() => onChoose(p.id)}>Choose this one</button>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const priceDiff = differs(products.map((p) => formatPrice(p.price)));
 
   return (
     <div class="compare">
@@ -56,13 +39,16 @@ export function Compare({ config, productIds, chosen, compact, onChoose }: { con
           <tr><th scope="col"><span class="sr">Attribute</span></th>{products.map((p) => <th scope="col" key={p.id}>{p.name}</th>)}</tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Price</th>{products.map((p) => <td key={p.id} class="price">{formatPrice(p.price)}</td>)}</tr>
-          {labels.map((l) => (
-            <tr key={l}><th scope="row">{l}</th>{products.map((p) => <td key={p.id} class={mono ? "mono" : ""}>{specOf(p, l)}</td>)}</tr>
-          ))}
-          {!mono && <tr><th scope="row">Why</th>{products.map((p) => <td key={p.id}>{p.why}</td>)}</tr>}
+          <tr class={priceDiff ? "is-diff" : ""}><th scope="row">Price</th>{products.map((p) => <td key={p.id} class="price">{formatPrice(p.price)}</td>)}</tr>
+          {labels.map((l) => {
+            const values = products.map((p) => specOf(p, l));
+            return (
+              <tr key={l} class={differs(values) ? "is-diff" : ""}><th scope="row">{l}</th>{products.map((p) => <td key={p.id} class={mono ? "mono" : ""}>{specOf(p, l)}</td>)}</tr>
+            );
+          })}
+          {!mono && <tr class="compare-why"><th scope="row">Why</th>{products.map((p) => <td key={p.id}>{p.why}</td>)}</tr>}
           <tr class="compare-actions"><th scope="row"><span class="sr">Choose</span></th>{products.map((p) => (
-            <td key={p.id}><button type="button" class="btn btn-primary t-btn" aria-label={`Choose ${p.name}`} onClick={() => onChoose(p.id)}>Choose</button></td>
+            <td key={p.id}><button type="button" class="btn btn-primary btn-block t-btn" aria-label={`Choose ${p.name}`} onClick={() => onChoose(p.id)}>Choose</button></td>
           ))}</tr>
         </tbody>
       </table>

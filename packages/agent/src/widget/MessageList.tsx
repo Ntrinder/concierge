@@ -12,7 +12,6 @@ interface Props {
   messages: Message[];
   visible: number;
   typing: boolean;
-  compact: boolean;
   animateFrom: number;
   onOpen: (id: string) => void;
   onChoose: (id: string) => void;
@@ -26,7 +25,7 @@ function Words({ text, animate }: { text: string; animate: boolean }) {
   return <>{text.split(/(\s+)/).map((w, i) => (/\s+/.test(w) ? w : <span key={i} class="word" style={{ animationDelay: `${i * 14}ms` }}>{w}</span>))}</>;
 }
 
-export function MessageList({ config, messages, visible, typing, compact, animateFrom, onOpen, onChoose, onAdd, onBend, onNotify }: Props) {
+export function MessageList({ config, messages, visible, typing, animateFrom, onOpen, onChoose, onAdd, onBend, onNotify }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -62,7 +61,7 @@ export function MessageList({ config, messages, visible, typing, compact, animat
               </div>
             );
           case "compare":
-            return <div key={m.id} class="msg msg-rich"><Compare config={config} productIds={m.productIds} chosen={m.chosen} compact={compact} onChoose={onChoose} /></div>;
+            return <div key={m.id} class="msg msg-rich"><Compare config={config} productIds={m.productIds} chosen={m.chosen} onChoose={onChoose} /></div>;
           case "notify-form":
             return <div key={m.id} class="msg msg-rich"><NotifyForm done={m.done} onSubmit={(email) => onNotify(m.id, email)} /></div>;
           case "added":

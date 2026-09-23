@@ -203,6 +203,9 @@ export function deriveTokens(config: AgentConfig): TokenResult {
   const r = RADII[config.shape];
   const s = SPACE[config.density];
   const f = FONT_SIZE[config.density];
+  const headingCase = config.heading?.case === "uppercase" ? "uppercase" : "none";
+  const headingTracking = config.heading?.tracking !== undefined ? Math.min(0.2, Math.max(0, config.heading.tracking)) : undefined;
+  const topOffset = config.topOffset !== undefined ? Math.min(200, Math.max(0, config.topOffset)) : 0;
 
   const vars: Record<string, string> = {
     "--c-bg": bgHex,
@@ -235,6 +238,9 @@ export function deriveTokens(config: AgentConfig): TokenResult {
     "--lh": LINE_HEIGHT[config.density],
     "--display-weight": config.font.display ? "600" : "650",
     "--font-mono": 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+    "--heading-case": headingCase,
+    "--heading-tracking": headingTracking !== undefined ? `${headingTracking}em` : "normal",
+    "--top-offset": `${topOffset}px`,
   };
   s.forEach((px, i) => { vars[`--s-${i + 1}`] = `${px}px`; });
   if (config.font.family !== "inherit") vars["--font-body"] = fontStack(config.font.family);

@@ -17,9 +17,11 @@ export interface AgentConfig {
   density: Density;
   voice: Voice;
   cardStyle: CardStyle;
-  agent: { name: string; avatar?: string; greeting: string };
+  agent: { name: string; avatar?: string; greeting: string; subtitle?: string };
   launcher: { position: "bottom-right" | "bottom-left"; label?: string };
   basket?: { checkoutUrl?: string; basketUrl?: string };
+  heading?: { case?: "none" | "uppercase"; tracking?: number };
+  topOffset?: number;
 }
 
 export interface TokenAdjustment { token: string; from: string; to: string; reason: string }
@@ -112,4 +114,5 @@ export interface ConvState {
   replies: Reply[];
   lastShown: string[];
   basketCount: number;
+  stripLabel?: string;
 }

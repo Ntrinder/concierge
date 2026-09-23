@@ -17,6 +17,7 @@ const C = {
   cosy: c({ key: "cosy", label: "Cosy", attr: "genres", op: "includes", value: "cosy", hard: true, group: "genre", receipt: "Cosy", receiptRank: 3, short: "cosy", shortRank: 1 }),
   history: c({ key: "history", label: "History", attr: "genres", op: "includes", value: "history", hard: true, group: "genre", receipt: "History", receiptRank: 3, short: "history", shortRank: 1 }),
 };
+const SHORT_PAGES = { ...C.pages, value: 300, label: "Under 300 pages" };
 const SUBSTYLES = [
   { re: /procedural|like rankin|rankin-?like/, c: C.procedural },
   { re: /historical/, c: C.historical },
@@ -39,12 +40,20 @@ export const books: Script = {
   store: "books",
   opening: OPENING,
   demoInputs: [OPENING, "Police procedural, like Rankin", CHANGE, "Compare the first two", { add: "b-cartographer", giftWrap: true }],
-  greetingReplies: [{ label: "“A gripping mystery for my dad…”", text: OPENING }],
+  greetingReplies: [
+    { label: "A gripping mystery for my dad…", text: OPENING },
+    { label: "A gift for a history buff", text: "A gift for a history buff" },
+    { label: "Something short for a train", text: "Something short for a train" },
+  ],
   stripLabel: "For dad:",
 
   route(text, state) {
     const t = text.toLowerCase();
-    if (state.step === "start") return /mystery|crime|book|dad|read|novel/.test(t) ? "understand" : "fallback";
+    if (state.step === "start") {
+      if (/history/.test(t)) return "historyGift";
+      if (/short|train|quick read/.test(t)) return "shortRead";
+      return /mystery|crime|book|dad|read|novel/.test(t) ? "understand" : "fallback";
+    }
     if (state.step === "added") {
       if (/card/.test(t)) return "card";
       if (/no thanks|that's all|no$/.test(t)) return "done";
@@ -78,6 +87,7 @@ export const books: Script = {
   steps: {
     understand: ({ v }) => ({
       constraints: [C.mystery, C.gripping, C.gore, C.pages, C.notRankin],
+      stripLabel: "For dad:",
       messages: [
         { kind: "text", text: v({
           warm: "Lovely — a gripping mystery, not too gory, under 400 pages, and nothing he's already read from Rankin. I've pinned those up top so you can change them any time.",
@@ -96,6 +106,24 @@ export const books: Script = {
         { label: "Nordic", text: "Nordic" },
       ],
     }),
+
+    historyGift: (ctx) => {
+      const constraints = [C.history, C.gripping];
+      const out = present(ctx, constraints, {
+        match: { warm: "History that reads like a story — three I'd happily wrap:", neutral: "History titles that read well:", terse: "History:" },
+        none: { warm: "Nothing fits every box, but these are close:", neutral: "Closest history titles:", terse: "Closest:" },
+      });
+      return { constraints, messages: out.messages, lastShown: out.lastShown, replies: AFTER_HISTORY, stripLabel: "For a history buff:" };
+    },
+
+    shortRead: (ctx) => {
+      const constraints = [SHORT_PAGES, C.gripping];
+      const out = present(ctx, constraints, {
+        match: { warm: "Short enough to finish before the last stop, and hard to put down:", neutral: "Under 300 pages and gripping:", terse: "≤300 pages:" },
+        none: { warm: "Nothing fits every box, but these are close:", neutral: "Closest history titles:", terse: "Closest:" },
+      });
+      return { constraints, messages: out.messages, lastShown: out.lastShown, replies: [{ label: "Compare the first two", text: "Compare the first two" }], stripLabel: "For the train:" };
+    },
 
     refine: (ctx) => {
       const t = ctx.text.toLowerCase();

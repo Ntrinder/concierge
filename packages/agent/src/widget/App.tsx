@@ -105,20 +105,19 @@ export function App({ config, vars, inline, defaultOpen, autoplay, host, highlig
         {!(open && compact) && (
           <button ref={launcherRef} type="button" class={cls("launcher t-btn", open && "is-open")} aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}
             aria-label={open ? "Close assistant" : config.launcher.label ?? config.agent.name}>
-            {open ? <span class="avatar"><CloseIcon /></span> : <><Avatar config={config} /><span>{config.launcher.label ?? config.agent.name}</span></>}
+            {open ? <span class="avatar"><CloseIcon /></span> : <><Avatar config={config} /><span class="launcher-label">{config.launcher.label ?? config.agent.name}</span></>}
           </button>
         )}
         {open && (
           <div class="panel" role="dialog" aria-label={config.agent.name}>
             <Header config={config} onClose={close} />
             <div class="body">
-              <ConstraintStrip constraints={strip.constraints} turn={strip.turn} compact={compact} stripLabel={SCRIPTS[config.store].stripLabel} cardStyle={config.cardStyle} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
+              <ConstraintStrip constraints={strip.constraints} turn={strip.turn} compact={compact} stripLabel={conv.stripLabel ?? SCRIPTS[config.store].stripLabel} cardStyle={config.cardStyle} onRemove={(key) => setConv((s) => removeConstraint(s, key))} />
               <MessageList
                 config={config}
                 messages={conv.messages}
                 visible={visible}
                 typing={typing}
-                compact={compact}
                 animateFrom={initialCount}
                 onOpen={setDetail}
                 onChoose={setDetail}

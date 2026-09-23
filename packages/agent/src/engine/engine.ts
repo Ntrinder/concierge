@@ -36,6 +36,7 @@ function apply(s: ConvState, out: TurnOutput, step: string): ConvState {
     replies: out.replies,
     lastShown: out.lastShown ?? s.lastShown,
     constraints: out.constraints ? stamp(s.constraints, out.constraints, turn) : s.constraints,
+    ...(out.stripLabel !== undefined ? { stripLabel: out.stripLabel } : {}),
   };
   for (const d of out.messages) next = push(next, { role: "agent", ...d });
   return next;
