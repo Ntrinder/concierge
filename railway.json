@@ -1,5 +1,5 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": { "builder": "RAILPACK", "buildCommand": "pnpm build" },
-  "deploy": { "startCommand": "pnpm start", "healthcheckPath": "/demo/books", "restartPolicyType": "ON_FAILURE" }
+  "deploy": { "startCommand": "cd apps/platform && exec node_modules/.bin/next start -p ${PORT:-3000}", "healthcheckPath": "/demo/books", "restartPolicyType": "ON_FAILURE" }
 }
