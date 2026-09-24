@@ -42,3 +42,5 @@ URL extraction is best-effort and it shows on real, JS-heavy or anti-bot sites â
 ## With another hour
 
 Wire a real per-merchant catalog import instead of static demo data; drop a real LLM in behind the same `route`/`steps` engine interface, which was built as a seam for exactly this; send the edit-link email, which is the first step towards accounts; and fix how a found logo becomes the avatar. A wide wordmark gets cropped to fill the round avatar, so Google's shows as a zoomed-in "oog". It should fit the whole logo inside the circle, or prefer a square icon from the site when there is one.
+
+I'd also rework the "Add it to your site" step for non-technical merchants. It has guides for each platform and a "Send to my developer" option, but every route still ends with pasting a script tag into theme code. It should spot their platform from the site we matched and open that guide first. It should also offer installs that need no code where the platform allows one, such as a Shopify app embed or a WordPress plugin.
