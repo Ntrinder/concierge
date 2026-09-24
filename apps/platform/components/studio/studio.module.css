@@ -57,7 +57,7 @@
 }
 /* Step 1, matched: named roles on the left, live homepage preview on the right */
 .match { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px; padding: 56px 80px; max-width: 1440px; margin: 0 auto; }
-/* The preview stretches to the left column's height, as in the mockup */
+/* The left column scrolls past a preview that fills the viewport and stays put */
 .matchLeft { align-self: start; }
 .matchLeft { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 .matchIntro { display: flex; flex-direction: column; gap: 12px; }
@@ -89,11 +89,11 @@
 .otherColours { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .otherColours li { display: flex; align-items: center; gap: 8px; }
 .otherColours .muted { font: 13px/1.4 var(--font-platform), system-ui, sans-serif; }
-.matchPreview { position: relative; overflow: hidden; min-height: 640px; border-radius: 20px; border: 1px solid var(--line); }
+.matchPreview { position: sticky; top: calc(var(--topbar) + 24px); align-self: start; height: calc(100vh - var(--topbar) - 80px); min-height: 560px; overflow: hidden; border-radius: 20px; border: 1px solid var(--line); }
 @media (max-width: 900px) {
   .match { grid-template-columns: 1fr; gap: 40px; padding: 40px 20px 64px; }
   .matchH1 { font-size: clamp(32px, 8vw, 44px); }
-  .matchPreview { min-height: 520px; }
+  .matchPreview { position: relative; top: auto; height: auto; min-height: 520px; }
   .roleEditor { margin-left: 0; }
 }
 .tune { display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: minmax(0, 1fr); height: calc(100vh - var(--topbar)); }
