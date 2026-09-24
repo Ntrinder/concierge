@@ -23,9 +23,17 @@ I worked from an AI-written design and plan, and these are places I went against
 - **SSRF guard.** The plan's extractor trusted the Host header and followed redirects. I made the allowlist local-only or operator-set, and re-validate every redirect.
 - **Silent overwrite.** The plan's config endpoint allowed silent overwrite by public id. I added a per-config edit token: returned once, stored only as a SHA-256, required to overwrite.
 
+## After the design review
+
+A hands-on review of the first build (`docs/review-brief.md`, mockups in `docs/mockups/`) led to a second round:
+
+- **Agent.** Product cards show a receipt of which of the shopper's constraints each one meets. Adding to the basket gives an in-basket card with checkout and basket links, handed to the host page as events. When nothing fits every constraint, the agent now recommends one near-miss, shows the trade-off in a small grid and offers to bend just that one rule. At 375px the constraint strip collapses to one line with an edit sheet, giving the conversation back most of the screen. Pastel brands get deep-shade buttons so they stay readable.
+- **Studio.** Step 1 shows what was matched as named roles (brand colour "Oxblood", taken from your CSS) rather than hex codes, with inline Change panels and a live preview. The preview is built from the merchant's own homepage (nav, headline, button, fonts) instead of a screenshot, so it reflows to phone width and follows edits. The last step adds a "Check my site" install check.
+- **Rules for the round.** No per-brand CSS: every fix lands in the token engine or shared components and is checked on all six Lab brands at both widths. No invented data: where the mockups showed things we don't know (delivery dates, for instance), they're left out rather than faked.
+
 ## What I cut for time
 
-A real LLM, accounts/auth, a real catalog import pipeline (products are invented per demo), Playwright end-to-end coverage (light Vitest only), and the screenshot backdrop behind the in-context preview (it uses a built mock page instead).
+A real LLM, accounts/auth, a real catalog import pipeline (products are invented per demo), Playwright end-to-end coverage (light Vitest only), and sending the "email me a link to edit this later" email (the studio shows what it would send; it doesn't send or keep the address).
 
 ## The weakest part
 
@@ -33,4 +41,4 @@ URL extraction is best-effort and it shows on real, JS-heavy or anti-bot sites â
 
 ## With another hour
 
-Wire a real per-merchant catalog import instead of static demo data; drop a real LLM in behind the same `route`/`steps` engine interface, which was built as a seam for exactly this; and build the screenshot backdrop for the preview.
+Wire a real per-merchant catalog import instead of static demo data; drop a real LLM in behind the same `route`/`steps` engine interface, which was built as a seam for exactly this; and send the edit-link email, which is the first step towards accounts.
